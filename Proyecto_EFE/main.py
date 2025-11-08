@@ -1,15 +1,14 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import Toplevel, ttk, messagebox
 
 #config:
 TITULO_VENTANA = "Gestion de Trenes"
 DIMENSION_VENTANA = "800x600"
 COLOR_VENTANA = "#f5f2f4"
 
-
-
+#ui(botones):
 #ui(ventanas):
-
+     
 def main():
     root = tk.Tk()
     root.title(TITULO_VENTANA)
@@ -33,13 +32,11 @@ def main():
     boton_nueva_simulacion.pack(padx = 10, pady = 5)
     boton_cargar_simulacion = ttk.Button(root, text="Cargar Simulación")
     boton_cargar_simulacion.pack(padx = 10, pady = 5)
-    
-
-
 
     root.mainloop()
 
-main()
+if __name__ == "__main__":
+    main()
 
 
 

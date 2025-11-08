@@ -16,3 +16,8 @@ El informe presenta el diseño de un sistema de simulación de tráfico ferrovia
 
 ## Almacenamiento
 Planteamos guardar nuestros archivos en una carpeta con el nombre **"archivos guardados"**.
+
+## Ejecución archivos principales (main)
+```bash
+cd INFO081-01-ProyectoTrenes/Proyecto_EFE
+python main.py
