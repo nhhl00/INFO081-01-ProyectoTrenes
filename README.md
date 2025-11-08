@@ -17,18 +17,12 @@ El informe presenta el diseño de un sistema de simulación de tráfico ferrovia
 ## Almacenamiento
 Planteamos guardar nuestros archivos en una carpeta con el nombre **"archivos guardados"**.
 
-<<<<<<< HEAD
-## Ejecución archivos principales (main)
-```bash
-cd INFO081-01-ProyectoTrenes/Proyecto_EFE
-python main.py
-=======
 ## Archivos principales 
+python main.py
 para ejecutar nuestros archivos principales, los cuales tenga el nombre "main" se segurian los siguientes pasos 
 - abrir un terminal
 - posicionarse en la carpeta principal del proyecto
-- cd Proyecto_EFE
-- ejecutar los archivos principales con los siguientes comandos
-  python main/main_simulacion.py
-  python main/main_visualizacion.py
->>>>>>> f69bc7794c0fee5134cafd06e3b99bc7e5609cdf
+- cd INFO081-01-ProyectoTrenes/Proyecto_EFE
+- ejecutar los archivos principales con los siguientes comandos:
+- python main.py
+  
