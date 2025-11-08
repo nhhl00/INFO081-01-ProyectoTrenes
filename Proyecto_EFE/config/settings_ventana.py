@@ -1,0 +1,3 @@
+TITULO_VENTANA = "Gestion de Trenes"
+DIMENSION_VENTANA = "800x600"
+COLOR_VENTANA = "#f5f2f4"
