@@ -37,9 +37,9 @@ def main():
 
 
 
-from models import Tren
-from models import Estacion
-from models import Pasajero
+from models.clases import Tren
+from models.clases import Estacion
+from models.clases import Pasajero
 
 if __name__ == "__main__":
     # Crear estaciones
