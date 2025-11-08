@@ -14,8 +14,8 @@ El informe presenta el diseño de un sistema de simulación de tráfico ferrovia
 - **Cantidad de personas:** Este indicador nos indicará la cantidad de personas para ayudar al funcionamiento del tren.  
 - **Vagones disponibles:** Este indicador nos indicará la cantidad de vagones disponibles según la cantidad de personas que estén en el tren.
 
-## Almacenamiento
-Planteamos guardar nuestros archivos en una carpeta con el nombre **"archivos guardados"**.
+## Almacenamiento y persistencia de datos
+Se tendra una persitencia de los archivos utilizando .json o .text. Además los archivos necesarios para correr el programa principal **"main.py"** estaran ubicados en la carpeta **"Proyecto_EFE"** junto al programa principal.
 
 ## Archivos principales 
 python main.py
