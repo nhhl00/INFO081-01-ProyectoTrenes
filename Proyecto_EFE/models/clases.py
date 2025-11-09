@@ -1,7 +1,7 @@
 class Estacion:
     def __init__(self, nombre, ubicacion):
         self.nombre = nombre
-        self.ubicacion = ubicacion  # podría ser una tupla (x, y)
+        self.ubicacion = ubicacion  
         self.pasajeros_esperando = []
 
     def recibir_pasajero(self, pasajero):
@@ -17,8 +17,8 @@ class Tren:
         self.id_tren = id_tren
         self.capacidad = capacidad
         self.velocidad_max = velocidad_max
-        self.ruta = ruta  # lista de estaciones o IDs de estaciones
-        self.pasajeros = []  # lista de objetos Pasajero
+        self.ruta = ruta  
+        self.pasajeros = []  
 
     def abordar_pasajero(self, pasajero):
         if len(self.pasajeros) < self.capacidad:
