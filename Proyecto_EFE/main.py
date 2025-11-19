@@ -1,14 +1,12 @@
 import tkinter as tk
 from tkinter import Toplevel, ttk, messagebox
-from logic.SistemaDeGuardado import SistemaGuardado
-
 
 #config:
-TITULO_VENTANA = "Gestion de Trenes"
-DIMENSION_VENTANA = "800x600"
-COLOR_VENTANA = "#f5f2f4"
+from config import TITULO_VENTANA, DIMENSION_VENTANA, COLOR_VENTANA
 
 #ui(botones):
+from ui import fn_botones
+
 #ui(ventanas):
 
 def main():
@@ -29,11 +27,9 @@ def main():
     notebook.add(frame_inicio, text="Inicio")
     notebook.add(frame_simulacion, text="Simulación")
 
+
     #ui(botones):
-    boton_nueva_simulacion = ttk.Button(root, text="Nueva Simulación", command = lambda:notebook.select(1))
-    boton_nueva_simulacion.pack(padx = 10, pady = 5)
-    boton_cargar_simulacion = ttk.Button(root, text="Cargar Simulación")
-    boton_cargar_simulacion.pack(padx = 10, pady = 5)
+    crear_botones = fn_botones(root)
 
     root.mainloop()
 
