@@ -21,6 +21,9 @@ def main():
     #ui(botones):
     crear_botones = fn_botones(root)
 
+    #conectar boton inicio a pestaña inicio
+    crear_botones["boton_iniciar_simulacion"].config(command=lambda: crear_frames.select(1))
+
     root.mainloop()
 
 

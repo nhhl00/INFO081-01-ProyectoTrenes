@@ -15,9 +15,9 @@ def fn_botones(parent):
 
     #referencias
     return {
-        "frame": frame_para_botones,
-        "iniciar simulación": boton_iniciar_simulacion,
-        "Cargaar simulacion": boton_cargar_simulacion,
+        "frame_para_botones": frame_para_botones,
+        "boton_iniciar_simulacion": boton_iniciar_simulacion,
+        "boton_cargar_simulacion": boton_cargar_simulacion,
     }
 
 
