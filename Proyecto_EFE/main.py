@@ -8,6 +8,9 @@ from ui import fn_botones
 from ui import estructura_pestaña_principal
 #clases:
 from models import *
+from logic.gestion_estaciones import GestorEstaciones
+from ui.menu_estaciones import menu_estaciones
+
 
 def main():
     #Iniciar programa
@@ -52,6 +55,13 @@ if __name__ == "__main__":
 
     santiago.embarcar_pasajeros(tren1)
     tren1.avanzar()
+
+
+def main():
+    gestor_est = GestorEstaciones()
+    menu_estaciones(gestor_est)
+
+
 
 if __name__ == "__main__":
     main()
