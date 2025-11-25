@@ -4,7 +4,6 @@ from tkinter import ttk
 def fn_botones(parent):
     #Define el frame para todos los botones
     frame_para_botones = ttk.Frame(parent)
-    frame_para_botones.pack(pady=10, padx=10)
 
     #Crear los botones
     boton_iniciar_simulacion = ttk.Button(frame_para_botones, text="Iniciar simulación")
