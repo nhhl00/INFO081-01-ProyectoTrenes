@@ -12,8 +12,7 @@ def estructura_pestañas(parent, frame_botones):
 
         if indice_sel == 0:
             frame_botones.pack(side=tk.BOTTOM, pady=10, padx=10)
-
-        else:
+        elif indice_sel == 1:
             frame_botones.pack_forget()
 
         frame_pestañas.bind("<<NotebookTabChanged>>", gestionar_botones_en_pestañas)
@@ -28,7 +27,8 @@ def estructura_pestañas(parent, frame_botones):
     #texto para pestaña principal y fondos
     tk.Label(frame_inicio,text="Sistema de gestion de tráfico ferroviario EFE Chile",bg="#f5f2f4",font=("Arial", 14)).pack(padx=50, pady=50)
     tk.Label(frame_config,text="Gestion de trenes:",font=("Arial",12)).pack(side=tk.TOP)
-    tk.Label(frame_simulacion, font=("Arial",12)).pack(side=tk.TOP)
+    tk.Label(frame_simulacion,text="Hora:", font=("Arial",10)).pack(side=tk.TOP, )
+   
     #añadir pestaña=
     frame_pestañas.add(frame_inicio,text="Inicio")
     frame_pestañas.add(frame_config,text="Configuracion")

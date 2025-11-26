@@ -8,6 +8,8 @@ from ui import fn_botones
 from ui import estructura_pestañas
 #clases:
 from models import *
+#logica(Estado):
+from logic import EstadoSimulacion
 
 def main():
     #Iniciar programa
@@ -16,10 +18,12 @@ def main():
     root.geometry(DIMENSION_VENTANA)
     root.configure(bg=COLOR_VENTANA)
 
+
     #ui(ésta{as}):
     crear_botones = fn_botones(root)
     frame_botones = crear_botones["frame_para_botones"]
     frame_botones.pack(side=tk.BOTTOM, pady=10, padx=10)
+
     #ui(botones):
     crear_frames = estructura_pestañas(root,frame_botones)
 
@@ -54,7 +58,12 @@ def main():
 
         crear_frames.select(2)
 
-    crear_botones["boton_iniciar_simulacion"].config(command=lambda: iniciar_simulacion())
+    def funciones_para_simulacion():
+        iniciar_simulacion()
+
+        
+
+    crear_botones["boton_iniciar_simulacion"].config(command=lambda: funciones_para_simulacion())
 
 
     
