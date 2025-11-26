@@ -7,6 +7,7 @@ from ui import fn_botones
 #ui(ventanas):
 from ui import Pestanas
 #clases:
+#clases:
 from models import *
 #logica(Estado):
 
@@ -25,8 +26,11 @@ def main():
 
     #ui(botones):
     crear_frames = Pestanas(root,frame_botones)
-    # obtener la instancia de Pestanas si existe
-    pestanas_inst = getattr(crear_frames, '_pestanas', None)
+    # obtener la instancia de Pestanas (crear_frames puede ser el objeto Pestanas)
+    if isinstance(crear_frames, Pestanas):
+        pestanas_inst = crear_frames
+    else:
+        pestanas_inst = getattr(crear_frames, '_pestanas', None)
 
     #otorgar comandos a botones
     def _salir():
@@ -44,7 +48,6 @@ def main():
     # Crear estaciones
     santiago = Estacion("Santiago", (0, 0))
     rancagua = Estacion("Rancagua", (50, 20))
-
     # Crear tren
     tren1 = Tren(id_tren="EFE01", capacidad=100, velocidad_max=120, ruta=[santiago, rancagua])
 
@@ -59,6 +62,8 @@ def main():
     santiago.embarcar_pasajeros(tren1)
     tren1.avanzar()
     
+    # No save integration (reverted)
+
     #funcion para comeranzar la simulacion
     def iniciar_simulacion():
         tren1.abordar_pasajero(p1)
@@ -68,10 +73,7 @@ def main():
 
         crear_frames.select(2)
         # actualizar estado visual si la clase Pestanas está disponible
-        if pestanas_inst:
-            pestanas_inst.set_status('En simulación')
-            # compat: attempt to start (no-op but safe)
-            pestanas_inst.start()
+        # (no-op) Starting state in UI not modified here
 
     def funciones_para_simulacion():
         iniciar_simulacion()
