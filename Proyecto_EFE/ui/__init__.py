@@ -1,7 +1,7 @@
 from .botones import fn_botones
-from .pestañas import estructura_pestañas
+from .pestañas import Pestanas
 
 __all__ = [
     "fn_botones",
-    "estructura_pestañas",
+    "Pestanas",
 ]

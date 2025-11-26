@@ -19,7 +19,7 @@ class SistemaGuardado:
                 "pasajeros_activos": getattr(estado, "pasajeros_activos", [])
             }
 
-            ruta = f"{sel.directorio}/{nombre_archivo}.json"
+            ruta = f"{self.directorio}/{nombre_archivo}.json"
             with open(ruta, "w", encoding ="utf-8") as f:
                 json.dump(datos, f, indent = 2, ensure_ascii = False)
             return True
@@ -34,7 +34,7 @@ class SistemaGuardado:
             with open(ruta, "r", encoding = "utf-8") as f:
                 datos = json.load(f)
 
-            from models.EstadoDeSimulacion import EstadoSimulacion
+            from .EstadoDeSimulacion import EstadoSimulacion
             estado = EstadoSimulacion()
             estado.hora_actual = datetime.datetime.fromisoformat(datos["hora_actual"])
             estado.estaciones = datos.get("estaciones", [])

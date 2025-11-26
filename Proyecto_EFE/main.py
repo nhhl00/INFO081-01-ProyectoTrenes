@@ -5,11 +5,10 @@ from config import TITULO_VENTANA, DIMENSION_VENTANA, COLOR_VENTANA
 #ui(botones):
 from ui import fn_botones
 #ui(ventanas):
-from ui import estructura_pestañas
+from ui import Pestanas
 #clases:
 from models import *
 #logica(Estado):
-from logic import EstadoSimulacion
 
 def main():
     #Iniciar programa
@@ -25,10 +24,21 @@ def main():
     frame_botones.pack(side=tk.BOTTOM, pady=10, padx=10)
 
     #ui(botones):
-    crear_frames = estructura_pestañas(root,frame_botones)
+    crear_frames = Pestanas(root,frame_botones)
+    # obtener la instancia de Pestanas si existe
+    pestanas_inst = getattr(crear_frames, '_pestanas', None)
 
     #otorgar comandos a botones
-    crear_botones["boton_salir_simulacion"].config(command=lambda: root.destroy())
+    def _salir():
+        try:
+            if pestanas_inst:
+                pestanas_inst.set_status('Idle')
+                # compat: attempt to stop (no-op but safe)
+                pestanas_inst.stop()
+        finally:
+            root.destroy()
+
+    crear_botones["boton_salir_simulacion"].config(command=_salir)
     crear_botones["boton_configurar_simulacion"].config(command=lambda: crear_frames.select(1))
 
     # Crear estaciones
@@ -57,6 +67,11 @@ def main():
         print(f"Estado del Tren {tren1.id_tren}: {len(tren1.pasajeros)} pasajeros a bordo.")
 
         crear_frames.select(2)
+        # actualizar estado visual si la clase Pestanas está disponible
+        if pestanas_inst:
+            pestanas_inst.set_status('En simulación')
+            # compat: attempt to start (no-op but safe)
+            pestanas_inst.start()
 
     def funciones_para_simulacion():
         iniciar_simulacion()
