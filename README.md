@@ -27,4 +27,5 @@ para ejecutar nuestros archivos principales, los cuales tenga el nombre "main" s
 ## Decisiones de Diseño del Sistema Ferroviario 
 - sentido de las vías
 - Estado de los trenes como: "detenido" , "viajando"
-- Capacidad de los bagones 
+- Capacidad de los bagones
+- Cantidad de pasajeros
