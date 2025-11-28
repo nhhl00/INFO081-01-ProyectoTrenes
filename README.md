@@ -24,4 +24,4 @@ para ejecutar nuestros archivos principales, los cuales tenga el nombre "main" s
 - cd INFO081-01-ProyectoTrenes/Proyecto_EFE
 - ejecutar los archivos principales con los siguientes comandos:
 - python main.py
-  
+## Decisiones de Diseño del Sistema Ferroviario EFE
