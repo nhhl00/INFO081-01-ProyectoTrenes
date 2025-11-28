@@ -4,7 +4,6 @@
 El informe presenta el diseño de un sistema de simulación de tráfico ferroviario para EFE Chile, que modela el transporte de pasajeros, el movimiento de trenes y la gestión de eventos. Propone una arquitectura modular con clases para trenes, estaciones y pasajeros, además de un sistema de persistencia y una interfaz interactiva. Incluye diagramas y plantea futuras mejoras para ampliar la simulación.
 
 ## Integrantes
-- Gustavo Lacrampe  
 - Benjamin Martinez  
 - Gustavo Martinez  
 - Agustin Montenegro  
@@ -25,5 +24,8 @@ para ejecutar nuestros archivos principales, los cuales tenga el nombre "main" s
 - cd INFO081-01-ProyectoTrenes/Proyecto_EFE
 - ejecutar los archivos principales con los siguientes comandos:
 - python main.py
-  
-"hola soy gustavo"
+## Decisiones de Diseño del Sistema Ferroviario 
+- sentido de las vías
+- Estado de los trenes como: "detenido" , "viajando"
+- Capacidad de los bagones
+- Cantidad de pasajeros
