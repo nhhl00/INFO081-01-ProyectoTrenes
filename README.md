@@ -26,4 +26,4 @@ para ejecutar nuestros archivos principales, los cuales tenga el nombre "main" s
 - python main.py
 ## Decisiones de Diseño del Sistema Ferroviario 
 - sentido de las vías
-- 
+- Estado de los trenes como: "detenido" , "viajando"
