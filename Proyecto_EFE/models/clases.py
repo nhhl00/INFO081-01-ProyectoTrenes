@@ -1,11 +1,25 @@
+from config import COLOR_ESTACIONES, BORDE_ESTACIONES
+
 class Estacion:
-    def __init__(self, nombre, ubicacion):
+    def __init__(self, nombre, id_estacion, poblacion, capacidad_de_trenes):
         self.nombre = nombre
-        self.ubicacion = ubicacion  
+        self.ubicacion = id_estacion  
+        self.poblacion = poblacion
+        self.estado = "activa"
+        self.capacidad_de_trenes = capacidad_de_trenes
+        self.trenes_esperando = []
         self.pasajeros_esperando = []
+        self.color = COLOR_ESTACIONES
+        self.borde = BORDE_ESTACIONES
 
     def recibir_pasajero(self, pasajero):
         self.pasajeros_esperando.append(pasajero)
+
+    def agregar_tren(self, tren):
+        if tren not in self.trenes_esperando and len(self.trenes_esperando) < self.capacidad_de_trenes:
+            self.trenes_esperando.append(tren)
+            return True
+        return False
 
     def embarcar_pasajeros(self, tren):
         while self.pasajeros_esperando and len(tren.pasajeros) < tren.capacidad:

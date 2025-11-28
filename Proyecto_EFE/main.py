@@ -5,7 +5,7 @@ from config import TITULO_VENTANA, DIMENSION_VENTANA, COLOR_VENTANA
 #ui(botones):
 from ui import fn_botones
 #ui(ventanas):
-from ui import Pestanas
+from ui import Pestañas
 #clases:
 #clases:
 from models import *
@@ -25,65 +25,38 @@ def main():
     frame_botones.pack(side=tk.BOTTOM, pady=10, padx=10)
 
     #ui(botones):
-    crear_frames = Pestanas(root,frame_botones)
-    # obtener la instancia de Pestanas (crear_frames puede ser el objeto Pestanas)
-    if isinstance(crear_frames, Pestanas):
-        pestanas_inst = crear_frames
+    crear_frames = Pestañas(root,frame_botones)
+    # obtener la instancia de Pestañas (crear_frames puede ser el objeto Pestañas)
+    if isinstance(crear_frames, Pestañas):
+        pestanas_instancia = crear_frames
     else:
-        pestanas_inst = getattr(crear_frames, '_pestanas', None)
+        pestanas_instancia = getattr(crear_frames, '_pestanas', None)
 
-    #otorgar comandos a botones
-    def _salir():
+    #funcion para boton de salida
+    def salir():
         try:
-            if pestanas_inst:
-                pestanas_inst.set_status('Idle')
-                # compat: attempt to stop (no-op but safe)
-                pestanas_inst.stop()
+            if pestanas_instancia:
+                pass
         finally:
             root.destroy()
-
-    crear_botones["boton_salir_simulacion"].config(command=_salir)
+    #botones de salida y configuracion
+    crear_botones["boton_salir_simulacion"].config(command=salir)
     crear_botones["boton_configurar_simulacion"].config(command=lambda: crear_frames.select(1))
 
-    # Crear estaciones
-    santiago = Estacion("Santiago", (0, 0))
-    rancagua = Estacion("Rancagua", (50, 20))
-    # Crear tren
-    tren1 = Tren(id_tren="EFE01", capacidad=100, velocidad_max=120, ruta=[santiago, rancagua])
-
-    # Crear pasajeros
-    p1 = Pasajero(1, "Santiago", "Rancagua")
-    p2 = Pasajero(2, "Santiago", "Rancagua")
-
-    # Simulación simple
-    santiago.recibir_pasajero(p1)
-    santiago.recibir_pasajero(p2)
-
-    santiago.embarcar_pasajeros(tren1)
-    tren1.avanzar()
-    
-    # No save integration (reverted)
-
-    #funcion para comeranzar la simulacion
+    # funcion para iniciar la simulacion (cambiar a la pestaña simulacion y dibujar elementos de la pestaña)
     def iniciar_simulacion():
-        tren1.abordar_pasajero(p1)
-        tren1.avanzar()
-
-        print(f"Estado del Tren {tren1.id_tren}: {len(tren1.pasajeros)} pasajeros a bordo.")
-
-        crear_frames.select(2)
-        # actualizar estado visual si la clase Pestanas está disponible
-        # (no-op) Starting state in UI not modified here
-
-    def funciones_para_simulacion():
-        iniciar_simulacion()
-
-        
-
-    crear_botones["boton_iniciar_simulacion"].config(command=lambda: funciones_para_simulacion())
-
-
+        if pestanas_instancia:
+            try:
+                pestanas_instancia.select(2)
+                pestanas_instancia.dibujar_elementos()
+            except IndexError as e:
+                messagebox.showerror("Error! Pestaña no existe", f"{e}")
+            except Exception as e:
+                messagebox.showerror("Error inesperado!", f"{e}")
     
+    # Asignar comando al boton de iniciar simulación
+    crear_botones["boton_iniciar_simulacion"].config(command=iniciar_simulacion)
+
     root.mainloop()
 
 
