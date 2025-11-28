@@ -25,4 +25,5 @@ para ejecutar nuestros archivos principales, los cuales tenga el nombre "main" s
 - ejecutar los archivos principales con los siguientes comandos:
 - python main.py
 ## Decisiones de Diseño del Sistema Ferroviario 
-- sentidos de las vias
+- sentido de las vías
+- 
