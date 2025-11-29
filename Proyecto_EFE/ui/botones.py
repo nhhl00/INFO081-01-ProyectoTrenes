@@ -26,7 +26,3 @@ def fn_botones(parent):
         "boton_salir_simulacion": boton_salir_simulacion,
         "boton_configurar_simulacion": boton_configurar_simulacion,
     }
-
-
-    
-    
