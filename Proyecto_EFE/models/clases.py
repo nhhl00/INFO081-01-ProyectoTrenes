@@ -26,6 +26,19 @@ class Estacion:
             pasajero = self.pasajeros_esperando.pop(0)
             tren.abordar_pasajero(pasajero)
 
+class Vias:
+    def __init__(self, id_via, longitud, conexion_estacion_a, conexion_estacion_b, via_rotatoria):
+        self.id_via = id_via
+        self.conexion_estacion_a = conexion_estacion_a
+        self.conexion_estacion_b = conexion_estacion_b
+        self.longitud = longitud
+        self.via_rotatoria = via_rotatoria
+
+
+
+
+
+
 class Tren:
     def __init__(self, id_tren, capacidad, velocidad_max, ruta):
         self.id_tren = id_tren
@@ -52,4 +65,4 @@ class Pasajero:
 
     def __str__(self):
         return f"Pasajero {self.id_pasajero} (de {self.origen} a {self.destino})"
-
+    
