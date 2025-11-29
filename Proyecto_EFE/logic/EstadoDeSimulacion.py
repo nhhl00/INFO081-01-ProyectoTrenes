@@ -23,7 +23,7 @@ class horaActual:
     def minuto(self):
         return self.fecha_hora.minute
     @property
-    def segundos(self):
+    def segundos(self)
         return self.segundos
     @property
     def fecha(self):
