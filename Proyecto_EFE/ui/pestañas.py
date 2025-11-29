@@ -3,6 +3,7 @@ from tkinter import ttk
 from tkinter import messagebox
 from config import COLOR_TRENES, BORDE_TRENES, COLOR_ESTACIONES, BORDE_ESTACIONES
 from models import Estacion
+from logic import horaActual
 
 
 class Pestañas:
@@ -11,6 +12,7 @@ class Pestañas:
         self.parent = parent
         self.frame_botones = frame_botones
         self.sistema = sistema_ferroviario
+
 
         # Crear Notebook
         self.notebook = ttk.Notebook(parent)
@@ -21,11 +23,17 @@ class Pestañas:
         self.frame_config = ttk.Frame(self.notebook)
         self.frame_simulacion = ttk.Frame(self.notebook)
 
+        #integrar reloj a pestañas
+        self.reloj = horaActual()
+        # estados para manejo del after() del reloj
+        self._reloj_running = False
+        self._reloj_after_id = None
+        self.crear_ui_reloj()
+
         # Contenido de las pestañas
         tk.Label(self.frame_inicio, text="Sistema de gestion de tráfico ferroviario EFE Chile",
                  bg="#f5f2f4", font=("Arial", 14)).pack(padx=50, pady=50)
         tk.Label(self.frame_config, text="Gestion de trenes:", font=("Arial", 12)).pack(side=tk.TOP)
-        tk.Label(self.frame_simulacion, text="Hora:", font=("Arial", 10)).pack(side=tk.TOP)
         # Canvas para dibujar estaciones y trenes
         self.canvas = tk.Canvas(self.frame_simulacion, width=640, height=240, bg="#ffffff")
         self.canvas.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
@@ -60,15 +68,15 @@ class Pestañas:
         #informacion
         self.frame_info = ttk.Frame(self.frame_info_estaciones)
         self.frame_info.pack(padx=5, pady=5, fill=tk.X)
-
-        self.lbl_nombre = ttk.Label(self.frame_info, text="Estacion: ")
-        self.lbl_nombre.pack(anchor=tk.W)
-        self.lbl_estado = ttk.Label(self.frame_info, text="Estado: ")
-        self.lbl_estado.pack(anchor=tk.W)
-        self.lbl_trenes = ttk.Label(self.frame_info, text="Trenes: ")
-        self.lbl_trenes.pack(anchor=tk.W)
-        self.lbl_poblacion = ttk.Label(self.frame_info, text="Población: ")
-        self.lbl_poblacion.pack(anchor=tk.W)
+        #labels de informacion de estaciones
+        self.label_nombre = ttk.Label(self.frame_info, text="Estacion: ")
+        self.label_nombre.pack(anchor=tk.W)
+        self.label_estado = ttk.Label(self.frame_info, text="Estado: ")
+        self.label_estado.pack(anchor=tk.W)
+        self.label_trenes = ttk.Label(self.frame_info, text="Trenes: ")
+        self.label_trenes.pack(anchor=tk.W)
+        self.label_poblacion = ttk.Label(self.frame_info, text="Población: ")
+        self.label_poblacion.pack(anchor=tk.W)
 
     def iniciar_estaciones_base(self):
             self.estaciones_base = {
@@ -144,12 +152,11 @@ class Pestañas:
         capacidad_trenes = getattr(estacion, 'capacidad_de_trenes', 'N/A')
         poblacion = getattr(estacion, 'poblacion', 'N/D')
 
-        self.lbl_nombre.config(text=f"Estación: {nombre}")
-        self.lbl_estado.config(text=f"Estado: {estado}")
+        self.label_nombre.config(text=f"Estación: {nombre}")
+        self.label_estado.config(text=f"Estado: {estado}")
         # Mostrar trenes como: número esperandos / capacidad si disponible
-        self.lbl_trenes.config(text=f"Trenes: {trenes_esperando}/{capacidad_trenes}")
-        self.lbl_poblacion.config(text=f"Población: {poblacion}")
-
+        self.label_trenes.config(text=f"Trenes: {trenes_esperando}/{capacidad_trenes}")
+        self.label_poblacion.config(text=f"Población: {poblacion}")
 
     def cambio_de_pestañas(self, event=None):
         index = self.notebook.index(self.notebook.select())
@@ -200,15 +207,53 @@ class Pestañas:
         c = self.canvas
         #resetear
         for n, est in self.estaciones_base.items():
-            tag = f'estacion_{n}'
-            try:
-                c.itemconfig(tag, outline=est.borde, width=2)
-            except Exception:
-                pass
+            tag_estacion = f'estacion_{n}'
+            c.itemconfig(tag_estacion, outline=est.borde, width=2)
         #resaltar en rojo
         if nombre in self.estaciones_base:
             tag_sel = f'estacion_{nombre}'
-            try:
-                c.itemconfig(tag_sel, outline='#ff0000', width=3)
-            except Exception:
-                messagebox.showerror("Error! no se pudo resaltar la estacion")
+            c.itemconfig(tag_sel, outline='#ff0000', width=3)
+
+
+    def crear_ui_reloj(self):
+        frame_reloj = ttk.Frame(self.frame_simulacion)
+        frame_reloj.pack(pady=10)
+
+        # Label principal del reloj
+        self.label_reloj = ttk.Label(frame_reloj, text="", font=('Arial', 8))
+        self.label_reloj.pack()
+
+        # Mostrar la hora inicial
+        self.actualizar_ui_reloj()
+    
+    def actualizar_ui_reloj(self):
+        #acuatliza la ui del rejol continumamente
+        try:
+            hora = self.reloj.obtener_hora()
+        except Exception:
+            # fallback: usar str() del objeto
+            hora = str(self.reloj)
+        self.label_reloj.config(text=f"Hora: {hora}")
+
+    def reloj_tick_por_segundo(self):
+        #avanzar segundos
+        self.reloj.avanzar_segundos(1)
+        self.actualizar_ui_reloj()
+        # reprogramamos si está corriendo
+        if self._reloj_running:
+            self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
+
+    def start_reloj(self):
+        #inicia el avance del reloj
+        if not self._reloj_running:
+            self._reloj_running = True
+            # programar primer tick inmediatamente
+            self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
+
+    def stop_reloj(self):
+        #detiene el avance del reloj
+        if self._reloj_running:
+            self._reloj_running = False
+            if self._reloj_after_id is not None:
+                self.parent.after_cancel(self._reloj_after_id)
+                self._reloj_after_id = None

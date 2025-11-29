@@ -18,7 +18,6 @@ def main():
     root.geometry(DIMENSION_VENTANA)
     root.configure(bg=COLOR_VENTANA)
 
-
     #ui(ésta{as}):
     crear_botones = fn_botones(root)
     frame_botones = crear_botones["frame_para_botones"]
@@ -36,7 +35,10 @@ def main():
     def salir():
         try:
             if pestanas_instancia:
-                pass
+                try:
+                    pestanas_instancia.stop_reloj()
+                except Exception:
+                    pass
         finally:
             root.destroy()
     #botones de salida y configuracion
@@ -49,10 +51,15 @@ def main():
             try:
                 pestanas_instancia.select(2)
                 pestanas_instancia.dibujar_elementos()
-            except IndexError as e:
-                messagebox.showerror("Error! Pestaña no existe", f"{e}")
-            except Exception as e:
-                messagebox.showerror("Error inesperado!", f"{e}")
+                # iniciar actualización del reloj
+                try:
+                    pestanas_instancia.start_reloj()
+                except Exception:
+                    pass
+            except IndexError:
+                messagebox.showerror("Error!","Pestaña no existe")
+            except Exception:
+                messagebox.showerror("Error!", "Hubo un error inesperado")
     
     # Asignar comando al boton de iniciar simulación
     crear_botones["boton_iniciar_simulacion"].config(command=iniciar_simulacion)
@@ -61,4 +68,5 @@ def main():
 
 
 if __name__ == "__main__":
+    messagebox.showinfo("Bienvenido al Programa","Utilizar el programa en pantalla completa")
     main()

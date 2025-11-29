@@ -1,5 +1,5 @@
-from .EstadoDeSimulacion import EstadoSimulacion
+from .EstadoDeSimulacion import horaActual
 
 __all__ = [
-    "EstadoSimulacion"
+    "horaActual"
 ]
