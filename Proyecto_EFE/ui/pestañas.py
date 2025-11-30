@@ -13,7 +13,7 @@ trenes = [
 
 
 class Pestañas:
-
+    #parametros clase pestañas
     def __init__(self, parent, frame_botones, sistema_ferroviario=None):
         self.parent = parent
         self.frame_botones = frame_botones
@@ -36,76 +36,84 @@ class Pestañas:
         self._reloj_after_id = None
         self.crear_ui_reloj()
 
-        # Contenido de las pestañas
+        # Titulos de las pestañas
         tk.Label(self.frame_inicio, text="Sistema de gestion de tráfico ferroviario EFE Chile",
                  bg="#f5f2f4", font=("Arial", 14)).pack(padx=50, pady=50)
         tk.Label(self.frame_config, text="Gestion de trenes:", font=("Arial", 12)).pack(side=tk.TOP)
-        # Canvas para dibujar estaciones y trenes
+        # Canvas para dibujar estaciones y trenes en frame_simulacion
         self.canvas = tk.Canvas(self.frame_simulacion, width=640, height=240, bg="#ffffff")
         self.canvas.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        #panel de estaciones
+        #llamar a panel de estaciones
         self.panel_estaciones()
-    
-        if not self.sistema:
-            self.iniciar_estaciones_base()
-            # crear trenes de ejemplo si no hay sistema
-            self.iniciar_trenes_base()
-        # Inicializar datos y dibujar elementos estáticos
+        self.panel_trenes()
+        #llamar a las estaciones base
+        self.iniciar_estaciones_base()
+        #llamar a los trenes base
+        self.iniciar_trenes_base()
+       
+        #llamar a dibujar elementos paara inicializar datos y dibujar elementos estáticos
         self.dibujar_elementos()
-
 
         # Añadir pestañas
         self.notebook.add(self.frame_inicio, text="Inicio")
         self.notebook.add(self.frame_config, text="Configuracion")
         self.notebook.add(self.frame_simulacion, text="Simulacion")
 
-        # Opcional: mantener índice de pestaña simulación
+        #mantener índice de pestaña simulación
         self.sim_index = 2
 
-        # Bind al cambio de pestaña para mostrar/ocultar botones
+        #Bind al cambio de pestaña para mostrar/ocultar botones (vincular cambio de pestañas a ocultmiento de botones)
         self.notebook.bind('<<NotebookTabChanged>>', self.cambio_de_pestañas)
         self.cambio_de_pestañas()
-
+    #panel para estaciones y trenes
     def panel_estaciones(self):
+        #frame para estaciones
         self.frame_info_estaciones = ttk.LabelFrame(self.frame_simulacion, text="Estaciones")
         self.frame_info_estaciones.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=10)
-        #lista estaciones
+        
+        #lista de estaciones
         self.lista_estaciones = tk.Listbox(self.frame_info_estaciones, height=10, width=20)
-        self.lista_estaciones.pack(padx=5,pady=5, fill=tk.X)
+        self.lista_estaciones.pack(padx=5, pady=5, fill=tk.X)
         self.lista_estaciones.bind('<<ListboxSelect>>', self.estacion_seleccionada)
-        #informacion
-        self.frame_info = ttk.Frame(self.frame_info_estaciones)
-        self.frame_info.pack(padx=5, pady=5, fill=tk.X)
-        #Informacion de estaciones
-        self.label_nombre = ttk.Label(self.frame_info, text="Estacion: ")
+        
+        #informacion de las estaciones
+        self.frame_info_para_labels = ttk.Frame(self.frame_info_estaciones)
+        self.frame_info_para_labels.pack(padx=5, pady=5, fill=tk.X)
+        
+        self.label_nombre = ttk.Label(self.frame_info_para_labels, text="Estacion: ")
         self.label_nombre.pack(anchor=tk.W)
-        self.label_estado = ttk.Label(self.frame_info, text="Estado: ")
+        self.label_estado = ttk.Label(self.frame_info_para_labels, text="Estado: ")
         self.label_estado.pack(anchor=tk.W)
-        self.label_trenes = ttk.Label(self.frame_info, text="Trenes: ")
+        self.label_trenes = ttk.Label(self.frame_info_para_labels, text="Trenes: ")
         self.label_trenes.pack(anchor=tk.W)
-        self.label_poblacion = ttk.Label(self.frame_info, text="Población: ")
+        self.label_poblacion = ttk.Label(self.frame_info_para_labels, text="Población: ")
         self.label_poblacion.pack(anchor=tk.W)
-        # Separar rectangulos de trenes
-        ttk.Separator(self.frame_info, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
-        ttk.Label(self.frame_info, text="Trenes:").pack(anchor=tk.W)
-        self.lista_trenes = tk.Listbox(self.frame_info, height=5, width=25)
+
+    def panel_trenes(self):
+        #Frame para trenes
+        self.frame_info_trenes = ttk.LabelFrame(self.frame_simulacion, text="Trenes")
+        self.frame_info_trenes.pack(side=tk.LEFT, fill=tk.BOTH, padx=10, pady=10)
+        
+        #Lista de trenes
+        self.lista_trenes = tk.Listbox(self.frame_info_trenes, height=5, width=25)
         self.lista_trenes.pack(padx=2, pady=2, fill=tk.X)
         self.lista_trenes.bind('<<ListboxSelect>>', self.tren_seleccionado)
-
-        #Informacion de trenes
-        self.frame_info_tren = ttk.Frame(self.frame_info)
-        self.frame_info_tren.pack(padx=2, pady=4, fill=tk.X)
-        self.label_tren_nombre = ttk.Label(self.frame_info_tren, text="Tren: ")
+        
+        #Información de trenes
+        self.frame_detalles_tren = ttk.Frame(self.frame_info_trenes)
+        self.frame_detalles_tren.pack(padx=2, pady=4, fill=tk.X)
+        self.label_tren_nombre = ttk.Label(self.frame_detalles_tren, text="Tren: ")
         self.label_tren_nombre.pack(anchor=tk.W)
-        self.label_tren_id = ttk.Label(self.frame_info_tren, text="ID: ")
+        self.label_tren_id = ttk.Label(self.frame_detalles_tren, text="ID: ")
         self.label_tren_id.pack(anchor=tk.W)
-        self.label_tren_cap = ttk.Label(self.frame_info_tren, text="Capacidad: ")
+        self.label_tren_cap = ttk.Label(self.frame_detalles_tren, text="Capacidad: ")
         self.label_tren_cap.pack(anchor=tk.W)
-        self.label_tren_vel = ttk.Label(self.frame_info_tren, text="Velocidad: ")
+        self.label_tren_vel = ttk.Label(self.frame_detalles_tren, text="Velocidad: ")
         self.label_tren_vel.pack(anchor=tk.W)
-        self.label_tren_estado = ttk.Label(self.frame_info_tren, text="Estado: ")
+        self.label_tren_estado = ttk.Label(self.frame_detalles_tren, text="Estado: ")
         self.label_tren_estado.pack(anchor=tk.W)
+
     #inicia la simulacion con las estaciones base
     def iniciar_estaciones_base(self):
             self.estaciones_base = {
@@ -114,10 +122,10 @@ class Pestañas:
                 "Talca": Estacion("Talca", "TAL" , 242344, 1),
                 "Chillán": Estacion("Chillán", "CHL" , 204091, 1),
             }
-
+    #funcion para dibujar estaciones en las coordenadas
     def dibujar_estaciones(self):
         c = self.canvas
-        # Borrar todo y redibujar estaciones (comportamiento original)
+        # Borrar todo y redibujar estaciones
         c.delete('all')
 
         canvas_w = int(c['width']) if 'width' in c.keys() else 640
@@ -138,7 +146,7 @@ class Pestañas:
             'Talca': (centro_x + rect_w + espacio_horizontal, centro_y)
         }
 
-        # Guardar posiciones y tamaños para uso propio
+        # Guardar posiciones y tamaños para uso propio(en las vias)
         self._posiciones = posiciones
         self._rect_w = rect_w
         self._rect_h = rect_h
@@ -170,12 +178,12 @@ class Pestañas:
             self.actualizar_lista_trenes()
         except Exception:
             pass
-                
+    #actualizar lista de estaciones en caso de borrarse o añadir
     def actualizar_lista_estaciones(self):
         self.lista_estaciones.delete(0, tk.END)
         for nombre, estacion in self.estaciones_base.items():
             self.lista_estaciones.insert(tk.END, f"{estacion.nombre}")
-
+    #al hacer click en una estacion mostrar su informacion y resaltarla
     def estacion_seleccionada(self, event):
         seleccion = self.lista_estaciones.curselection()
         if seleccion:
@@ -198,14 +206,15 @@ class Pestañas:
         self.label_trenes.config(text=f"Trenes: {trenes_esperando}/{capacidad_trenes}")
         self.label_poblacion.config(text=f"Población: {poblacion}")
 
+    #al cambiar pestañas se ocultn los botones
     def cambio_de_pestañas(self, event=None):
-        index = self.notebook.index(self.notebook.select())
-        if index == 0:
+        indice = self.notebook.index(self.notebook.select())
+        if indice == 0:
             self.frame_botones.pack(side=tk.BOTTOM, pady=10, padx=10)
         else:
             self.frame_botones.pack_forget()
 
-    # Métodos públicos para compatibilidad
+    # Métodos para compatibilidad
     def select(self, index):
         return self.notebook.select(index)
 
@@ -250,7 +259,7 @@ class Pestañas:
         except:
             self.trenes_list = list(trenes)
         self._train_items = {}
-
+    # actualizar lista de trenes en caso de borrar o añadir
     def actualizar_lista_trenes(self):
         # Actualiza la listbox de trenes en el panel derecho
         try:
@@ -260,7 +269,7 @@ class Pestañas:
                 self.lista_trenes.insert(tk.END, nombre)
         except Exception:
             pass
-
+    #dibujar los trenes en sus coordenadas
     def dibujar_trenes(self):
         c = self.canvas
         # Dibujar rectangulos que represtnan a los trenes
@@ -284,7 +293,7 @@ class Pestañas:
             txt = c.create_text(x + ancho / 2, y + alto / 2, text=nombre, font=('Arial', 9, 'bold'), tags=(tag,))
             self._train_items[nombre] = (rect, txt)
             y += alto + espacio
-
+    #al hacer click mostrar laa informcaion del tren resaltarlo
     def tren_seleccionado(self, event):
         seleccionado = self.lista_trenes.curselection()
         if not seleccionado:
@@ -295,12 +304,14 @@ class Pestañas:
         except Exception:
             return
         nombre = getattr(tren, 'nombre_tren', str(tren))
-        # actualizar labels de información
+        # actualizar labels de información con datos
         self.label_tren_nombre.config(text=f"Tren: {nombre}")
         self.label_tren_id.config(text=f"ID: {getattr(tren, 'id_tren', 'N/A')}")
         self.label_tren_cap.config(text=f"Capacidad: {getattr(tren, 'capacidad', 'N/A')}")
         self.label_tren_vel.config(text=f"Velocidad: {getattr(tren, 'velocidad_constante', 'N/A')}")
         self.label_tren_estado.config(text=f"Estado: {getattr(tren, 'estado', 'N/A')}")
+        
+        
         # resaltar en canvas
         self.resaltar_tren(nombre)
 
@@ -308,25 +319,19 @@ class Pestañas:
     def resaltar_tren(self, nombre):
         c = self.canvas
         # resetear outline de todos los trenes
-        for items in getattr(self, '_train_items', {}).items():
-            rect_id = items[0] if isinstance(items, tuple) else items
-            try:
-                c.itemconfig(rect_id, outline=BORDE_TRENES, width=1)
-            except Exception:
-                pass
+        for tren_info in getattr(self, "_train_items", {}).values():
+            rectangulo_id = tren_info[0]
+            c.itemconfig(rectangulo_id, outline=BORDE_TRENES, width=2) 
         # resaltar el seleccionado
         if nombre in getattr(self, '_train_items', {}):
-            rect_id = self._train_items[nombre][0]
-            try:
-                c.itemconfig(rect_id, outline='#00aa00', width=3)
-            except Exception:
-                pass
+            rectangulo_id = self._train_items[nombre][0]
+            c.itemconfig(rectangulo_id, outline='#00aa00', width=3)
 
     #funcion para resaltar estaciones al seleccionarla
     def resaltar_estacion(self, nombre):
         #resaltaa estacion seleccionada
         c = self.canvas
-        #resetear
+        #resetear resaltamiento
         for n, est in self.estaciones_base.items():
             tag_estacion = f'estacion_{n}'
             c.itemconfig(tag_estacion, outline=est.borde, width=2)
@@ -335,7 +340,7 @@ class Pestañas:
             tag_sel = f'estacion_{nombre}'
             c.itemconfig(tag_sel, outline='#ff0000', width=3)
 
-
+    #funcion para crear el ui del reloj 
     def crear_ui_reloj(self):
         frame_reloj = ttk.Frame(self.frame_simulacion)
         frame_reloj.pack(pady=10)
@@ -346,35 +351,31 @@ class Pestañas:
 
         # Mostrar la hora inicial
         self.actualizar_ui_reloj()
-    ##funcion para actualizar la ui del reloj junto a los ticks
+    #funcion para actualizar la ui del reloj junto a los ticks
     def actualizar_ui_reloj(self):
         #acuatliza la ui del rejol continumamente
         try:
             hora = self.reloj.obtener_hora()
         except Exception:
-            # fallback: usar str() del objeto
             hora = str(self.reloj)
         self.label_reloj.config(text=f"Hora: {hora}")
 
     def reloj_tick_por_segundo(self):
         # avanzar segundos y actualizar
-        try:
-            self.reloj.avanzar_segundos(1)
-            self.actualizar_ui_reloj()
-        except Exception:
-            pass
+        self.reloj.avanzar_segundos(1)
+        self.actualizar_ui_reloj()
         # reprogramar si está corriendo
         if self._reloj_running:
             self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
 
     def empezar_reloj(self):
-        # inicia el avance del reloj (nombre histórico)
+        # inicia el avance del reloj 
         if not self._reloj_running:
             self._reloj_running = True
             self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
 
     def parar_reloj(self):
-        # detiene el avance del reloj (nombre histórico)
+        # detiene el avance del reloj 
         if self._reloj_running:
             self._reloj_running = False
             if self._reloj_after_id is not None:

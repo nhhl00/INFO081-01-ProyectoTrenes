@@ -36,45 +36,8 @@ class Vias:
         self.via_rotatoria = via_rotatoria
         self.tren_en_via = tren_en_via
         self.estado = "desocupada" #estado inicial de la via
-        def via_ocupada(self, tren):
-            if self.estado == "desocupada":
-                self.tren_en_via = tren
-                self.estado = "ocupada"
-                return True
-            else:
-                return False
-            
-        def desocupar_via(self):
-            self.tren_en_via = None
-            self.estado = "desocupada"
-
-        def estacion_conetactada(self, conexion_estacion_1, conexion_estacion_2):
-            return (conexion_estacion_1 == self.conexion_estacion_a and conexion_estacion_2 == self.conexion_estacion_b) or \
-                   (conexion_estacion_1 == self.conexion_estacion_b and conexion_estacion_2 == self.conexion_estacion_a)
-        
-        def estacion_otro_extremo(self, estacion_actual):
-            if estacion_actual == self.conexion_estacion_a:
-                return self.conexion_estacion_b
-            elif estacion_actual == self.conexion_estacion_b:
-                return self.conexion_estacion_a
-            else:
-                return None
-            
-        def informacion_via(self):
-            estado = "Ocupada"if self.estado == "ocupada" else "Desocupada"
-            return f"Vía {self.id_via}: {self.conexion_estacion_a} <-> {self.conexion_estacion_b}, Longitud: {self.longitud} km, Estado: {estado}"
-        
-        def __str__(self):
-            return f"Vía {self.id_via} {self.conexion_estacion_a} - {self.conexion_estacion_b}"
         
             
-
-
-
-
-
-
-
 
 
 
@@ -89,22 +52,34 @@ class Tren:
         self.pasajeros = []  
         self.estacion_actual = estacion_actual
         self.vagones = vagones
-        self.estacion_destino = estacion_destino
+        self.estacion_destino = self.proximo_destino()
         self.estado = "detenido"
 
     def proximo_destino(self):
         if self.ruta and len(self.ruta) > 1:
             try:
-                indice_actual = self.ruta.indice(self.estacion_actual)
+                indice_actual = self.ruta.index(self.estacion_actual)
                 if indice_actual < len(self.ruta) - 1:
                     return self.ruta[indice_actual+1]
             except ValueError:
                 return self.ruta[0] if self.ruta else None
         return None
     
-    def __str__(self):
-        return f"{self.id_tren} - {self.nombre_tren}"
+    def info_tren(self):
+    #Informacion del tren en tkinter
+        return f"""Tren: {self.nombre_tren}
+    "ID": {self.id_tren}
+    "Capacidad": {self.capacidad} pasajeros
+    "Velocidad": {self.velocidad_constante} km/h
+    "Vagones": {self.vagones}
 
+    "Estación actual": {self.estacion_actual}
+    "Próximo destino": {self.estacion_destino or "Fin de la ruta"}
+    "Estado": {self.estado}
+
+    "Pasajeros a bordo": {len(self.pasajeros)}/{self.capacidad}
+    "Ruta": {' → '.join(self.ruta)}"""
+    
 
 class Pasajero:
     def __init__(self, id_pasajero, origen, destino):

@@ -1,12 +1,11 @@
 import tkinter as tk
-from tkinter import Toplevel, ttk, messagebox
+from tkinter import ttk, messagebox
 #config:
 from config import TITULO_VENTANA, DIMENSION_VENTANA, COLOR_VENTANA
 #ui(botones):
 from ui import fn_botones
 #ui(ventanas):
 from ui import Pestañas
-#clases:
 #clases:
 from models import *
 #logica(Estado):
