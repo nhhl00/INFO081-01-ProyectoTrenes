@@ -36,7 +36,7 @@ def main():
         try:
             if pestanas_instancia:
                 try:
-                    pestanas_instancia.stop_reloj()
+                    pestanas_instancia.parar_reloj()
                 except Exception:
                     pass
         finally:
@@ -53,7 +53,7 @@ def main():
                 pestanas_instancia.dibujar_elementos()
                 # iniciar actualización del reloj
                 try:
-                    pestanas_instancia.start_reloj()
+                    pestanas_instancia.empezar_reloj()
                 except Exception:
                     pass
             except IndexError:

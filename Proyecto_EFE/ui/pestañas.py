@@ -2,8 +2,14 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from config import COLOR_TRENES, BORDE_TRENES, COLOR_ESTACIONES, BORDE_ESTACIONES
-from models import Estacion
+from models import Estacion, Tren
 from logic import horaActual
+from models import Tren
+
+trenes = [
+    Tren("BMU", "T01", 236, 160, ["Santiago", "Rancagua","Santiago","Chillan"], "Santiago", 4),
+    Tren("EMU", "T02", 250, 120, ["Talca", "Chillan","Talca","Rancagua"], "Talca", 8)
+]
 
 
 class Pestañas:
@@ -43,8 +49,11 @@ class Pestañas:
     
         if not self.sistema:
             self.iniciar_estaciones_base()
-        # Dibujar elementos estáticos
+            # crear trenes de ejemplo si no hay sistema
+            self.iniciar_trenes_base()
+        # Inicializar datos y dibujar elementos estáticos
         self.dibujar_elementos()
+
 
         # Añadir pestañas
         self.notebook.add(self.frame_inicio, text="Inicio")
@@ -68,7 +77,7 @@ class Pestañas:
         #informacion
         self.frame_info = ttk.Frame(self.frame_info_estaciones)
         self.frame_info.pack(padx=5, pady=5, fill=tk.X)
-        #labels de informacion de estaciones
+        #Informacion de estaciones
         self.label_nombre = ttk.Label(self.frame_info, text="Estacion: ")
         self.label_nombre.pack(anchor=tk.W)
         self.label_estado = ttk.Label(self.frame_info, text="Estado: ")
@@ -77,7 +86,27 @@ class Pestañas:
         self.label_trenes.pack(anchor=tk.W)
         self.label_poblacion = ttk.Label(self.frame_info, text="Población: ")
         self.label_poblacion.pack(anchor=tk.W)
+        # Separar rectangulos de trenes
+        ttk.Separator(self.frame_info, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
+        ttk.Label(self.frame_info, text="Trenes:").pack(anchor=tk.W)
+        self.lista_trenes = tk.Listbox(self.frame_info, height=5, width=25)
+        self.lista_trenes.pack(padx=2, pady=2, fill=tk.X)
+        self.lista_trenes.bind('<<ListboxSelect>>', self.tren_seleccionado)
 
+        #Informacion de trenes
+        self.frame_info_tren = ttk.Frame(self.frame_info)
+        self.frame_info_tren.pack(padx=2, pady=4, fill=tk.X)
+        self.label_tren_nombre = ttk.Label(self.frame_info_tren, text="Tren: ")
+        self.label_tren_nombre.pack(anchor=tk.W)
+        self.label_tren_id = ttk.Label(self.frame_info_tren, text="ID: ")
+        self.label_tren_id.pack(anchor=tk.W)
+        self.label_tren_cap = ttk.Label(self.frame_info_tren, text="Capacidad: ")
+        self.label_tren_cap.pack(anchor=tk.W)
+        self.label_tren_vel = ttk.Label(self.frame_info_tren, text="Velocidad: ")
+        self.label_tren_vel.pack(anchor=tk.W)
+        self.label_tren_estado = ttk.Label(self.frame_info_tren, text="Estado: ")
+        self.label_tren_estado.pack(anchor=tk.W)
+    #inicia la simulacion con las estaciones base
     def iniciar_estaciones_base(self):
             self.estaciones_base = {
                 "Santiago": Estacion("Santiago", "STG", 8242459, 1),
@@ -88,6 +117,7 @@ class Pestañas:
 
     def dibujar_estaciones(self):
         c = self.canvas
+        # Borrar todo y redibujar estaciones (comportamiento original)
         c.delete('all')
 
         canvas_w = int(c['width']) if 'width' in c.keys() else 640
@@ -107,6 +137,11 @@ class Pestañas:
             'Chillán': (centro_x, centro_y + rect_h + espacio_vertical),
             'Talca': (centro_x + rect_w + espacio_horizontal, centro_y)
         }
+
+        # Guardar posiciones y tamaños para uso propio
+        self._posiciones = posiciones
+        self._rect_w = rect_w
+        self._rect_h = rect_h
 
         # Dibujar cada estación
         for nombre, (x, y) in posiciones.items():
@@ -130,20 +165,25 @@ class Pestañas:
                             tags=f'info_{nombre}')
                 
         self.actualizar_lista_estaciones()
+        # actualizar lista de trenes si existen
+        try:
+            self.actualizar_lista_trenes()
+        except Exception:
+            pass
                 
     def actualizar_lista_estaciones(self):
-            self.lista_estaciones.delete(0, tk.END)
-            for nombre, estacion in self.estaciones_base.items():
-                self.lista_estaciones.insert(tk.END, f"{estacion.nombre}")
+        self.lista_estaciones.delete(0, tk.END)
+        for nombre, estacion in self.estaciones_base.items():
+            self.lista_estaciones.insert(tk.END, f"{estacion.nombre}")
 
     def estacion_seleccionada(self, event):
-            seleccion = self.lista_estaciones.curselection()
-            if seleccion:
-                indice = seleccion[0]
-                nombre_estacion = list(self.estaciones_base.keys())[indice]
-                estacion = self.estaciones_base[nombre_estacion]
-                self.mostrar_informacion_estacion(estacion)
-                self.resaltar_estacion(nombre_estacion)
+        seleccion = self.lista_estaciones.curselection()
+        if seleccion:
+            indice = seleccion[0]
+            nombre_estacion = list(self.estaciones_base.keys())[indice]
+            estacion = self.estaciones_base[nombre_estacion]
+            self.mostrar_informacion_estacion(estacion)
+            self.resaltar_estacion(nombre_estacion)
 
     def mostrar_informacion_estacion(self, estacion):
         nombre = getattr(estacion, 'nombre', 'Desconocida')
@@ -181,27 +221,108 @@ class Pestañas:
                 self.dibujar_estaciones()
                 return True
         return False
-        
-         
-    #funcion para dibujar en la pestaña
-    def dibujar_elementos(self):
-        c = self.canvas
-        #dibujar estaciones 
-        self.dibujar_estaciones()
 
-        posicion_inicial_x_tren = 10
-        tren_ancho = 60
-        tren_alto = 20
-        espacio_entre_trenes = 10
-        # BMU 
-        bmuy = 10
-        c.create_rectangle(posicion_inicial_x_tren, bmuy, posicion_inicial_x_tren + tren_ancho, bmuy + tren_alto, fill=COLOR_TRENES, outline=BORDE_TRENES)
-        c.create_text(posicion_inicial_x_tren + tren_ancho / 2, bmuy + tren_alto / 2, text='BMU', font=('Arial', 9, 'bold'))
-        # EMU
-        emuy = bmuy + tren_alto + espacio_entre_trenes
-        c.create_rectangle(posicion_inicial_x_tren, emuy, posicion_inicial_x_tren + tren_ancho, emuy + tren_alto, fill=COLOR_TRENES, outline=BORDE_TRENES)
-        c.create_text(posicion_inicial_x_tren + tren_ancho / 2, emuy + tren_alto / 2, text='EMU', font=('Arial', 9, 'bold'))
-    
+    def dibujar_elementos(self):
+        """Dibuja los elementos principales en el canvas: estaciones y trenes."""
+        c = self.canvas
+        # Dibujar estaciones primero
+        try:
+            self.dibujar_estaciones()
+        except Exception:
+            pass
+
+        # Dibujar trenes (representación simple en columna izquierda)
+        try:
+            # Asegurar que la lista de trenes esté inicializada
+            if not hasattr(self, 'trenes_list'):
+                self.iniciar_trenes_base()
+            self.dibujar_trenes()
+            # Actualizar listbox de trenes
+            self.actualizar_lista_trenes()
+        except Exception:
+            pass
+
+    #iniciar la simulacion con los trenes bsae (BMU-EMU)
+    def iniciar_trenes_base(self):
+        # Inicializar lista de trenes si no existe un sistema
+        try:
+            self.trenes_list = list(self.sistema.trenes) if self.sistema and hasattr(self.sistema, 'trenes') else list(trenes)
+        except:
+            self.trenes_list = list(trenes)
+        self._train_items = {}
+
+    def actualizar_lista_trenes(self):
+        # Actualiza la listbox de trenes en el panel derecho
+        try:
+            self.lista_trenes.delete(0, tk.END)
+            for tren in self.trenes_list:
+                nombre = getattr(tren, 'nombre_tren', str(tren))
+                self.lista_trenes.insert(tk.END, nombre)
+        except Exception:
+            pass
+
+    def dibujar_trenes(self):
+        c = self.canvas
+        # Dibujar rectangulos que represtnan a los trenes
+        x = 10
+        y = 80
+        ancho = 60
+        alto = 20
+        espacio = 10
+        # limpiar items previos de tren por si acaso
+        if hasattr(self, '_train_items'):
+            for item in self._train_items.values():
+                try:
+                    c.delete(item)
+                except Exception:
+                    pass
+        self._train_items = {}
+        for tren in self.trenes_list:
+            nombre = getattr(tren, 'nombre_tren', 'Tren')
+            tag = f'tren_{nombre}'
+            rect = c.create_rectangle(x, y, x + ancho, y + alto, fill=COLOR_TRENES, outline=BORDE_TRENES, tags=(tag,))
+            txt = c.create_text(x + ancho / 2, y + alto / 2, text=nombre, font=('Arial', 9, 'bold'), tags=(tag,))
+            self._train_items[nombre] = (rect, txt)
+            y += alto + espacio
+
+    def tren_seleccionado(self, event):
+        seleccionado = self.lista_trenes.curselection()
+        if not seleccionado:
+            return
+        indice = seleccionado[0]
+        try:
+            tren = self.trenes_list[indice]
+        except Exception:
+            return
+        nombre = getattr(tren, 'nombre_tren', str(tren))
+        # actualizar labels de información
+        self.label_tren_nombre.config(text=f"Tren: {nombre}")
+        self.label_tren_id.config(text=f"ID: {getattr(tren, 'id_tren', 'N/A')}")
+        self.label_tren_cap.config(text=f"Capacidad: {getattr(tren, 'capacidad', 'N/A')}")
+        self.label_tren_vel.config(text=f"Velocidad: {getattr(tren, 'velocidad_constante', 'N/A')}")
+        self.label_tren_estado.config(text=f"Estado: {getattr(tren, 'estado', 'N/A')}")
+        # resaltar en canvas
+        self.resaltar_tren(nombre)
+
+    #funcion para resaltar tren
+    def resaltar_tren(self, nombre):
+        c = self.canvas
+        # resetear outline de todos los trenes
+        for items in getattr(self, '_train_items', {}).items():
+            rect_id = items[0] if isinstance(items, tuple) else items
+            try:
+                c.itemconfig(rect_id, outline=BORDE_TRENES, width=1)
+            except Exception:
+                pass
+        # resaltar el seleccionado
+        if nombre in getattr(self, '_train_items', {}):
+            rect_id = self._train_items[nombre][0]
+            try:
+                c.itemconfig(rect_id, outline='#00aa00', width=3)
+            except Exception:
+                pass
+
+    #funcion para resaltar estaciones al seleccionarla
     def resaltar_estacion(self, nombre):
         #resaltaa estacion seleccionada
         c = self.canvas
@@ -225,7 +346,7 @@ class Pestañas:
 
         # Mostrar la hora inicial
         self.actualizar_ui_reloj()
-    
+    ##funcion para actualizar la ui del reloj junto a los ticks
     def actualizar_ui_reloj(self):
         #acuatliza la ui del rejol continumamente
         try:
@@ -236,24 +357,31 @@ class Pestañas:
         self.label_reloj.config(text=f"Hora: {hora}")
 
     def reloj_tick_por_segundo(self):
-        #avanzar segundos
-        self.reloj.avanzar_segundos(1)
-        self.actualizar_ui_reloj()
-        # reprogramamos si está corriendo
+        # avanzar segundos y actualizar
+        try:
+            self.reloj.avanzar_segundos(1)
+            self.actualizar_ui_reloj()
+        except Exception:
+            pass
+        # reprogramar si está corriendo
         if self._reloj_running:
             self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
 
-    def start_reloj(self):
-        #inicia el avance del reloj
+    def empezar_reloj(self):
+        # inicia el avance del reloj (nombre histórico)
         if not self._reloj_running:
             self._reloj_running = True
-            # programar primer tick inmediatamente
             self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
 
-    def stop_reloj(self):
-        #detiene el avance del reloj
+    def parar_reloj(self):
+        # detiene el avance del reloj (nombre histórico)
         if self._reloj_running:
             self._reloj_running = False
             if self._reloj_after_id is not None:
-                self.parent.after_cancel(self._reloj_after_id)
+                try:
+                    self.parent.after_cancel(self._reloj_after_id)
+                except Exception:
+                    pass
                 self._reloj_after_id = None
+
+    
