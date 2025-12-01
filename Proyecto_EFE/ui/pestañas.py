@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-from config import COLOR_TRENES, BORDE_TRENES, COLOR_ESTACIONES, BORDE_ESTACIONES
+from config import COLOR_TRENES, BORDE_TRENES
 from models import Estacion, Tren, Vias
 from logic import horaActual
 
@@ -66,7 +66,7 @@ class Pestañas:
         self.notebook.add(self.frame_simulacion, text="Simulacion")
 
         #mantener índice de pestaña simulación
-        self.sim_index = 2
+        self.sim_indice = 2
 
         #Bind al cambio de pestaña para mostrar/ocultar botones (vincular cambio de pestañas a ocultmiento de botones)
         self.notebook.bind('<<NotebookTabChanged>>', self.cambio_de_pestañas)
@@ -80,6 +80,7 @@ class Pestañas:
         #lista de estaciones
         self.lista_estaciones = tk.Listbox(self.frame_info_estaciones, height=10, width=20)
         self.lista_estaciones.pack(padx=5, pady=5, fill=tk.X)
+        #bind (click en estacion) asignando la funcion
         self.lista_estaciones.bind('<<ListboxSelect>>', self.estacion_seleccionada)
         
         #informacion de las estaciones
@@ -119,6 +120,9 @@ class Pestañas:
         self.label_tren_vel.pack(anchor=tk.W)
         self.label_tren_estado = ttk.Label(self.frame_detalles_tren, text="Estado: ")
         self.label_tren_estado.pack(anchor=tk.W)
+        # Label para mostrar la ruta seleccionada
+        self.label_tren_ruta = ttk.Label(self.frame_detalles_tren, text="Ruta: ")
+        self.label_tren_ruta.pack(anchor=tk.W)
 
     def panel_vias(self):
         self.frame_info_vias = ttk.LabelFrame(self.frame_simulacion, text="Vías - Conexiones")
@@ -263,7 +267,7 @@ class Pestañas:
     def dibujar_estaciones(self):
         c = self.canvas
         # Borrar todo y redibujar estaciones
-        c.delete('all')
+        c.delete("all")
 
         canvas_w = int(c['width']) if 'width' in c.keys() else 640
         canvas_h = int(c['height']) if 'height' in c.keys() else 240
@@ -345,7 +349,7 @@ class Pestañas:
 
     def actualizar_lista_vias_por_estacion(self, nombre_estacion):
         #actualizar la lista de vias por estacion seleccionada
-        if hasattr(self, 'lista_vias'):
+        if hasattr(self, "lista_vias"):
             self.lista_vias.delete(0, tk.END)
             
             vias_conectadas = []
@@ -431,8 +435,9 @@ class Pestañas:
             if via:
                 self.mostrar_informacion_via(via)
                 self.resaltar_via(via.id_via)
-        except Exception:
             return
+        except Exception:
+            pass
 
     def mostrar_informacion_estacion(self, estacion):
         nombre = getattr(estacion, 'nombre', 'Desconocida')
@@ -539,10 +544,11 @@ class Pestañas:
     def iniciar_trenes_base(self):
         # Inicializar lista de trenes si no existe un sistema
         try:
-            self.trenes_list = list(self.sistema.trenes) if self.sistema and hasattr(self.sistema, 'trenes') else list(trenes)
+            self.trenes_list = list(self.sistema.trenes) if self.sistema and hasattr(self.sistema, "trenes") else list(trenes)
         except:
             self.trenes_list = list(trenes)
-        self._train_items = {}
+        self.train_items = {}
+        self._route_items = []  # guardar items dibujados para rutas (líneas sobre canvas)
     # actualizar lista de trenes en caso de borrar o añadir
     def actualizar_lista_trenes(self):
         # Actualiza la listbox de trenes en el panel derecho
@@ -564,18 +570,27 @@ class Pestañas:
         espacio = 10
         # limpiar items previos de tren por si acaso
         if hasattr(self, '_train_items'):
-            for item in self._train_items.values():
+            for item in self.train_items.values():
                 try:
                     c.delete(item)
                 except Exception:
                     pass
-        self._train_items = {}
+        self.train_items = {}
         for tren in self.trenes_list:
             nombre = getattr(tren, 'nombre_tren', 'Tren')
             tag = f'tren_{nombre}'
-            rect = c.create_rectangle(x, y, x + ancho, y + alto, fill=COLOR_TRENES, outline=BORDE_TRENES, tags=(tag,))
-            txt = c.create_text(x + ancho / 2, y + alto / 2, text=nombre, font=('Arial', 9, 'bold'), tags=(tag,))
-            self._train_items[nombre] = (rect, txt)
+            # Si el tren tiene estacion_actual conocida, dibujarlo cerca de esa estación
+            if getattr(tren, 'estacion_actual', None) and getattr(self, '_posiciones', None) and tren.estacion_actual in self._posiciones:
+                sx, sy = self._posiciones[tren.estacion_actual]
+                # Ajuste para dibujar a la derecha del rectángulo de estación
+                rect_x = sx + self._rect_w + 10
+                rect_y = sy + 5
+                rect = c.create_rectangle(rect_x, rect_y, rect_x + ancho, rect_y + alto, fill=COLOR_TRENES, outline=BORDE_TRENES, tags=(tag,))
+                txt = c.create_text(rect_x + ancho / 2, rect_y + alto / 2, text=nombre, font=('Arial', 9, 'bold'), tags=(tag,))
+            else:
+                rect = c.create_rectangle(x, y, x + ancho, y + alto, fill=COLOR_TRENES, outline=BORDE_TRENES, tags=(tag,))
+                txt = c.create_text(x + ancho / 2, y + alto / 2, text=nombre, font=('Arial', 9, 'bold'), tags=(tag,))
+            self.train_items[nombre] = (rect, txt)
             y += alto + espacio
     #al hacer click mostrar laa informcaion del tren resaltarlo
     def tren_seleccionado(self, event):
@@ -594,10 +609,16 @@ class Pestañas:
         self.label_tren_cap.config(text=f"Capacidad: {getattr(tren, 'capacidad', 'N/A')}")
         self.label_tren_vel.config(text=f"Velocidad: {getattr(tren, 'velocidad_constante', 'N/A')}")
         self.label_tren_estado.config(text=f"Estado: {getattr(tren, 'estado', 'N/A')}")
-        
-        
+        # Mostrar ruta en el label
+        ruta = getattr(tren, 'ruta', [])
+        try:
+            self.label_tren_ruta.config(text=f"Ruta: {' -> '.join(ruta)}")
+        except Exception:
+            self.label_tren_ruta.config(text=f"Ruta: {ruta}")
         # resaltar en canvas
         self.resaltar_tren(nombre)
+        # Mostrar ruta del tren en el canvas
+        self.mostrar_ruta_tren(tren)
 
     #funcion para resaltar tren
     def resaltar_tren(self, nombre):
@@ -608,8 +629,8 @@ class Pestañas:
             c.itemconfig(rectangulo_id, outline=BORDE_TRENES, width=2) 
         # resaltar el seleccionado
         if nombre in getattr(self, '_train_items', {}):
-            rectangulo_id = self._train_items[nombre][0]
-            c.itemconfig(rectangulo_id, outline='#00aa00', width=3)
+            rectangulo_id = self.train_items[nombre][0]
+            c.itemconfig(rectangulo_id, outline='#00aa00', width=2)
 
     #funcion para resaltar estaciones al seleccionarla
     def resaltar_estacion(self, nombre):
@@ -622,9 +643,55 @@ class Pestañas:
         #resaltar en rojo
         if nombre in self.estaciones_base:
             tag_sel = f'estacion_{nombre}'
-            c.itemconfig(tag_sel, outline='#ff0000', width=3)
+            c.itemconfig(tag_sel, outline='#ff0000', width=2)
+        # Limpiar cualquier resaltado de rutas previas cuando se selecciona una estación
+        self.limpiar_resaltado_ruta()
 
-    # Vías integration removed — reverted to prior state
+    def limpiar_resaltado_ruta(self):
+        c = self.canvas
+        # Borrar líneas de rutas dibujadas previamente
+        if hasattr(self, '_route_items') and self._route_items:
+            for item in list(self._route_items):
+                try:
+                    c.delete(item)
+                except Exception:
+                    pass
+            self._route_items = []
+        # Resetear outline de todas las estaciones a su color original
+        for nombre, est in getattr(self, 'estaciones_base', {}).items():
+            try:
+                c.itemconfig(f'estacion_{nombre}', outline=est.borde, width=2)
+            except Exception:
+                pass
+
+    def mostrar_ruta_tren(self, tren):
+        #dibuja en el canvas la ruta de los trenes 
+        # Limpiar ruta previa
+        self.limpiar_resaltado_ruta()
+        if not tren:
+            return
+        ruta = getattr(tren, 'ruta', None)
+        if not ruta:
+            return
+        c = self.canvas
+        puntos = []
+        for nombre in ruta:
+            if nombre in getattr(self, '_posiciones', {}):
+                # Resaltar la estación
+                try:
+                    c.itemconfig(f'estacion_{nombre}', outline='#0000ff', width=3)
+                except Exception:
+                    pass
+                x, y = self._posiciones[nombre]
+                # Centro del rectángulo
+                x_c = x + self._rect_w / 2
+                y_c = y + self._rect_h / 2
+                puntos.append((x_c, y_c))
+        # Dibujar líneas entre puntos consecutivos
+        for a, b in zip(puntos, puntos[1:]):
+                line = c.create_line(a[0], a[1], b[0], b[1], fill='#0000ff', width=3, tags=(f'ruta_{getattr(tren, "id_tren", "")}'))
+                # Guardar para poder borrar luego
+                self._route_items.append(line)
 
     #funcion para crear el ui del reloj 
     def crear_ui_reloj(self):

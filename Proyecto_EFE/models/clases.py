@@ -67,18 +67,55 @@ class Tren:
         self.pasajeros = []  
         self.estacion_actual = estacion_actual
         self.vagones = vagones
-        self.estacion_destino = self.proximo_destino()
+        # Asegurar que la ruta sea lista y contenga al menos la estacion_actual
+        self.ruta = ruta or []
+        self.estacion_destino = estacion_destino if estacion_destino is not None else self.proximo_destino()
         self.estado = "detenido"
 
-    def proximo_destino(self):
-        if self.ruta and len(self.ruta) > 1:
-            try:
-                indice_actual = self.ruta.index(self.estacion_actual)
-                if indice_actual < len(self.ruta) - 1:
-                    return self.ruta[indice_actual+1]
-            except ValueError:
-                return self.ruta[0] if self.ruta else None
+    def avanzar_a_destino(self):
+        next_station = self.proximo_destino()
+        if next_station:
+            # Avanzar: actualizar estacion_actual y recalcular destino
+            self.estacion_actual = next_station
+            self.estacion_destino = self.proximo_destino()
+            self.estado = "viajando"
+            return next_station
         return None
+
+    def indice_ruta_actual(self):
+        #devuelve indice de la ruta actual o None si no est en ningun ruta
+        if not self.ruta or self.estacion_actual is None:
+            return None
+        try:
+            return self.ruta.index(self.estacion_actual)
+        except ValueError:
+            return None
+
+    def proximo_destino(self):
+        #proximo destino segun la ruta y estacion actual
+        if not self.ruta:
+            return None
+        #tomar la primera estación de la ruta si no hay estacion actual
+        if self.estacion_actual is None:
+            return self.ruta[0]
+        try:
+            indice = self.ruta.index(self.estacion_actual)
+            if indice < len(self.ruta) - 1:
+                return self.ruta[indice + 1]
+            else:
+                return None  # Fin de la ruta
+        except ValueError:
+            # Si la estación actual no está en la ruta, devolver primer elemento
+            return self.ruta[0]
+
+    def ruta_restante(self):
+        #lista con lo que falta de la ruta teniendo en cuenta la primera estacion
+        if not self.ruta:
+            return []
+        indice = self.indice_ruta_actual()
+        if indice is None:
+            return list(self.ruta)
+        return self.ruta[indice:]
     
     def info_tren(self):
     #Informacion del tren en tkinter
@@ -104,6 +141,3 @@ class Pasajero:
 
     def __str__(self):
         return f"Pasajero {self.id_pasajero} (de {self.origen} a {self.destino})"
-    
-
-    
