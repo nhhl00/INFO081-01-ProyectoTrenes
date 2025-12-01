@@ -152,25 +152,24 @@ class Pestañas:
             }
 
     def iniciar_vias_base(self):
-        """Inicializa las vías entre estaciones"""
-        # Normalizar nombres de estaciones para que coincidan con claves de self.estaciones_base
+        # conectaar nombres de estaciones para que coincidan con claves de self.estaciones_base
         self.vias_base = [
-            Vias("V01", 100, "Santiago", "Rancagua", False, None),  # 100 km
-            Vias("V02", 200, "Santiago", "Chillán", False, None),  # 200 km
+            Vias("V01", 87, "Santiago", "Rancagua", False, None),  # 87km
+            Vias("V02", 400, "Santiago", "Chillán", False, None),  # 400km
             # Vías en L para conectar Chillán - Talca: derecha luego arriba
-            Vias("V03", 40, "Chillán", "CHL_TAL_mid", False, None),
-            Vias("V04", 60, "CHL_TAL_mid", "Talca", False, None),
+            Vias("V03", 120, "Chillán", "chillan_talca_mitad", False, None), #180km en total
+            Vias("V04", 60, "chillan_talca_mitad", "Talca", False, None),
             # Vías en L para conectar Rancagua - Talca: derecha luego abajo
-            Vias("V05", 45, "Rancagua", "RAN_TAL_mid", False, None),
-            Vias("V06", 55, "RAN_TAL_mid", "Talca", False, None),
+            Vias("V05", 80, "Rancagua", "rancagua_talca_mitad", False, None), #200km en total
+            Vias("V06", 120, "rancagua_talca_mitad", "Talca", False, None),
         ]
-        # lista para trackear vias mostradas en canvas
+        # lista para guardar vias mostradas en canvas
         self.vias_mostradas = []
-        # lista actual mostrada en listbox para mapear indices a vias
+        # lista actual mostrada en listbox para dibujar indices a vias
         self.current_vias_list = list(self.vias_base)
     
     def dibujar_vias_por_estacion(self, nombre_estacion):
-        """Dibuja solo las vías relacionadas con la estación seleccionada"""
+        #Al presionar la estacion muestra las vias correspondientes
         c = self.canvas
         # Limpiar vías anteriores
         self.limpiar_vias()
@@ -182,7 +181,7 @@ class Pestañas:
         for via in self.vias_base:
             if via.conexion_estacion_a == nombre_estacion or via.conexion_estacion_b == nombre_estacion:
                 vias_conectadas.append(via)
-         # Dibujar cada vía conectada
+         #dibujar cada vía conectada
         for via in vias_conectadas:
             estacion_a = via.conexion_estacion_a
             estacion_b = via.conexion_estacion_b
@@ -215,7 +214,7 @@ class Pestañas:
                 self.vias_mostradas.append(via.id_via)
 
     def limpiar_vias(self):
-        """Elimina todas las vías del canvas"""
+        #borrr vias
         c = self.canvas
         # Eliminar todas las líneas de vías y sus etiquetas
         # Eliminar todas las líneas de vías usando el tag común 'via_line'
@@ -226,7 +225,7 @@ class Pestañas:
         self.vias_mostradas = []
 
     def dibujar_todas_las_vias(self):
-        """Dibuja todas las vías (para cuando no hay estación seleccionada)"""
+        #dibujar TODAS las vias cuando se seleccione una estacion en color gris, rojas si ocupadas por tren
         c = self.canvas
         self.limpiar_vias()
         
@@ -246,9 +245,9 @@ class Pestañas:
                 
                 # Color más tenue para vías no seleccionadas
                 if via.estado == "ocupada":
-                    color_via = "#ff6666"  # Rojo claro para ocupadas
+                    color_via = "#ff6666"  # Rojo para ocupadas
                 else:
-                    color_via = "#cccccc"  # Gris claro para normales
+                    color_via = "#cccccc"  # Gris para no seleccionadas pero visibles
                 grosor_via = 2
                 # Dibujar la línea de la vía
                 linea = c.create_line(x1_centro, y1_centro, x2_centro, y2_centro, 
@@ -283,8 +282,8 @@ class Pestañas:
             'Chillán': (centro_x, centro_y + rect_h + espacio_vertical),
             'Talca': (centro_x + rect_w + espacio_horizontal, centro_y),
             #crear vías en L (no son estaciones reales)
-            'CHL_TAL_mid': (centro_x + rect_w + espacio_horizontal/2, centro_y + rect_h + espacio_vertical),
-            'RAN_TAL_mid': (centro_x + rect_w + espacio_horizontal/2, centro_y - rect_h - espacio_vertical)
+            'chillan_talca_mitad': (centro_x + rect_w + espacio_horizontal/2, centro_y + rect_h + espacio_vertical),
+            'rancagua_talca_mitad': (centro_x + rect_w + espacio_horizontal/2, centro_y - rect_h - espacio_vertical)
         }
 
         # Guardar posiciones y tamaños para uso propio(en las vias)
@@ -326,7 +325,6 @@ class Pestañas:
             self.lista_estaciones.insert(tk.END, f"{estacion.nombre}")
     #al hacer click en una estacion mostrar su informacion y resaltarla
     def estacion_seleccionada(self, event):
-        """Maneja la selección de una estación en la lista"""
         seleccion = self.lista_estaciones.curselection()
         if seleccion:
             indice = seleccion[0]
@@ -335,18 +333,18 @@ class Pestañas:
             estacion = self.estaciones_base[nombre_estacion]
             self.mostrar_informacion_estacion(estacion)
             self.resaltar_estacion(nombre_estacion)
-            # Mostrar solo las vías conectadas a esta estación
+            # mostrar solo las vías conectadas a esta estación
             self.dibujar_vias_por_estacion(nombre_estacion)
-            # Actualizar lista de vías en el panel
+            # Actualizar lista de vías en el panel por estacion
             self.actualizar_lista_vias_por_estacion(nombre_estacion)
         else:
-            # Si no hay selección, mostrar todas las vías tenues
+            # si no hay selección, mostrar todas las vias grises
             self.estacion_seleccionada_actual = None
             self.dibujar_todas_las_vias()
             self.actualizar_lista_vias_todas()
 
     def actualizar_lista_vias_por_estacion(self, nombre_estacion):
-        """Actualiza la lista de vías mostrando solo las conectadas a la estación seleccionada"""
+        #actualizar la lista de vias por estacion seleccionada
         if hasattr(self, 'lista_vias'):
             self.lista_vias.delete(0, tk.END)
             
@@ -362,7 +360,7 @@ class Pestañas:
                 self.lista_vias.insert(tk.END, f"{via.id_via} → {otra_estacion} | {estado} | {via.longitud} km")
 
     def actualizar_lista_vias_todas(self):
-        """Actualiza la lista de vías mostrando todas"""
+        #actualizar la lista de vias
         if hasattr(self, 'lista_vias'):
             self.lista_vias.delete(0, tk.END)
             # Mostrar una única línea por vía y guardar la lista actual
@@ -372,20 +370,20 @@ class Pestañas:
                 self.lista_vias.insert(tk.END, f"{via.id_via}: {via.conexion_estacion_a}-{via.conexion_estacion_b} | {estado} | {via.longitud}km")
 
     def dibujar_elementos(self):
-        """Dibuja todos los elementos en la interfaz"""
+        #dibujar todos los elementos de la interfaz
         c = self.canvas
         
         # Dibujar estaciones primero
         try:
             self.dibujar_estaciones()
-        except Exception as e:
-            print(f"Error dibujando estaciones: {e}")
+        except Exception as error:
+            print(f"Error dibujando estaciones: {error}")
         
         # Dibujar todas las vías inicialmente (tenues)
         try:
             self.dibujar_todas_las_vias()
-        except Exception as e:
-            print(f"Error dibujando vías: {e}")
+        except Exception as error:
+            print(f"Error dibujando vías: {error}")
         
         # Dibujar trenes
         try:
@@ -393,14 +391,14 @@ class Pestañas:
                 self.iniciar_trenes_base()
             self.dibujar_trenes()
             self.actualizar_lista_trenes()
-        except Exception as e:
-            print(f"Error dibujando trenes: {e}")
+        except Exception as error:
+            print(f"Error dibujando trenes: {error}")
         
         # Actualizar lista de vías
         self.actualizar_lista_vias_todas()
 
     def via_seleccionada(self, event):
-        """Maneja la selección de una vía en la lista"""
+        #Manejar seleccion de vias
         # Detectar si la selección proviene del Listbox o del Canvas
         widget = getattr(event, 'widget', None)
         if widget == getattr(self, 'lista_vias', None):
@@ -417,7 +415,7 @@ class Pestañas:
                 self.mostrar_informacion_via(via)
                 self.resaltar_via(via.id_via)
             return
-        # Si no es el Listbox, asumir que es un click en el canvas
+        # Si no es el Listbox asumir que es un click en el canvas
         try:
             c = self.canvas
             item = c.find_closest(event.x, event.y)
