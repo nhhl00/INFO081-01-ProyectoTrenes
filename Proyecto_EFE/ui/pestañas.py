@@ -157,6 +157,12 @@ class Pestañas:
         self.vias_base = [
             Vias("V01", 100, "Santiago", "Rancagua", False, None),  # 100 km
             Vias("V02", 200, "Santiago", "Chillán", False, None),  # 200 km
+            # Vías en L para conectar Chillán - Talca: derecha luego arriba
+            Vias("V03", 40, "Chillán", "CHL_TAL_mid", False, None),
+            Vias("V04", 60, "CHL_TAL_mid", "Talca", False, None),
+            # Vías en L para conectar Rancagua - Talca: derecha luego abajo
+            Vias("V05", 45, "Rancagua", "RAN_TAL_mid", False, None),
+            Vias("V06", 55, "RAN_TAL_mid", "Talca", False, None),
         ]
         # lista para trackear vias mostradas en canvas
         self.vias_mostradas = []
@@ -275,7 +281,10 @@ class Pestañas:
             'Santiago': (centro_x, centro_y),
             'Rancagua': (centro_x, centro_y - rect_h - espacio_vertical),
             'Chillán': (centro_x, centro_y + rect_h + espacio_vertical),
-            'Talca': (centro_x + rect_w + espacio_horizontal, centro_y)
+            'Talca': (centro_x + rect_w + espacio_horizontal, centro_y),
+            #crear vías en L (no son estaciones reales)
+            'CHL_TAL_mid': (centro_x + rect_w + espacio_horizontal/2, centro_y + rect_h + espacio_vertical),
+            'RAN_TAL_mid': (centro_x + rect_w + espacio_horizontal/2, centro_y - rect_h - espacio_vertical)
         }
 
         # Guardar posiciones y tamaños para uso propio(en las vias)
