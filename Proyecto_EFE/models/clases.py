@@ -28,7 +28,7 @@ class Estacion:
             tren.abordar_pasajero(pasajero)
 
 class Vias:
-    def __init__(self, id_via, longitud, conexion_estacion_a, conexion_estacion_b, via_rotatoria, tren_en_via, estado):
+    def __init__(self, id_via, longitud, conexion_estacion_a, conexion_estacion_b, via_rotatoria, tren_en_via):
         self.id_via = id_via
         self.conexion_estacion_a = conexion_estacion_a
         self.conexion_estacion_b = conexion_estacion_b
@@ -36,12 +36,27 @@ class Vias:
         self.via_rotatoria = via_rotatoria
         self.tren_en_via = tren_en_via
         self.estado = "desocupada" #estado inicial de la via
+    #funcion para las conexiones entre estaciones
+    def conexiones(self, conexion_estaacion_a, conexion_estacion_b):
+        return self.conexion_estacion_a, self.conexion_estacion_b
+    #calcular tiempo que demoraria un tren
+    def tiempo_de_recorrido(self, longitud, velocidad_tren):
+        self.tiempo_rec = self.longitud / velocidad_tren
+        return self.tiempo_rec
+    #cuando via esta ocupada
+    def ocupar_via(self, tren):
+        self.tren_en_via = tren
+        self.estado = "ocupada"
+    #cundo via esta desocupada
+    def desocupar_via(self):
+        self.tren_en_via = None
+        self.estado = "desocupada"
+    #referencias
+    def __str__(self):
+        return f"Via {self.id_via}: {self.conexion_estacion_a} <-> {self.conexion_estacion_b} {self.estado}"
+    
         
-            
-
-
-
-
+        
 class Tren:
     def __init__(self, nombre_tren, id_tren, capacidad, velocidad_constante, ruta, estacion_actual, vagones=2, estacion_destino=None):
         self.nombre_tren = nombre_tren 
@@ -89,4 +104,6 @@ class Pasajero:
 
     def __str__(self):
         return f"Pasajero {self.id_pasajero} (de {self.origen} a {self.destino})"
+    
+
     

@@ -2,13 +2,12 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from config import COLOR_TRENES, BORDE_TRENES, COLOR_ESTACIONES, BORDE_ESTACIONES
-from models import Estacion, Tren
+from models import Estacion, Tren, Vias
 from logic import horaActual
-from models import Tren
 
 trenes = [
-    Tren("BMU", "T01", 236, 160, ["Santiago", "Rancagua","Santiago","Chillan"], "Santiago", 4),
-    Tren("EMU", "T02", 250, 120, ["Talca", "Chillan","Talca","Rancagua"], "Talca", 8)
+    Tren("BMU", "T01", 236, 160, ["Santiago", "Rancagua","Santiago","Chillán"], "Santiago", 4),
+    Tren("EMU", "T02", 250, 120, ["Talca", "Chillán","Talca","Rancagua"], "Talca", 8)
 ]
 
 
@@ -46,14 +45,20 @@ class Pestañas:
 
         #llamar a panel de estaciones
         self.panel_estaciones()
+        #llamar a panel de trenes
         self.panel_trenes()
         #llamar a las estaciones base
         self.iniciar_estaciones_base()
         #llamar a los trenes base
         self.iniciar_trenes_base()
-       
+        #llamar a panel vias
+        self.panel_vias()
+        #llamar a las vias base
+        self.iniciar_vias_base()
         #llamar a dibujar elementos paara inicializar datos y dibujar elementos estáticos
         self.dibujar_elementos()
+
+        # movement controller removed — no MovimientoDeTrenes integration
 
         # Añadir pestañas
         self.notebook.add(self.frame_inicio, text="Inicio")
@@ -90,6 +95,7 @@ class Pestañas:
         self.label_poblacion = ttk.Label(self.frame_info_para_labels, text="Población: ")
         self.label_poblacion.pack(anchor=tk.W)
 
+
     def panel_trenes(self):
         #Frame para trenes
         self.frame_info_trenes = ttk.LabelFrame(self.frame_simulacion, text="Trenes")
@@ -114,6 +120,28 @@ class Pestañas:
         self.label_tren_estado = ttk.Label(self.frame_detalles_tren, text="Estado: ")
         self.label_tren_estado.pack(anchor=tk.W)
 
+    def panel_vias(self):
+        self.frame_info_vias = ttk.LabelFrame(self.frame_simulacion, text="Vías - Conexiones")
+        self.frame_info_vias.pack(side=tk.RIGHT, fill=tk.Y, padx=5, pady=10)
+        # Lista de vías
+        self.lista_vias = tk.Listbox(self.frame_info_vias, height=10, width=25)
+        self.lista_vias.pack(padx=5, pady=5, fill=tk.BOTH, expand=True)
+        self.lista_vias.bind('<<ListboxSelect>>', self.via_seleccionada)
+        # Información detallada de la vía seleccionada
+        self.frame_info_vias_labels = ttk.Frame(self.frame_info_vias)
+        self.frame_info_vias_labels.pack(padx=5, pady=5, fill=tk.X)
+    
+        self.label_via_id = ttk.Label(self.frame_info_vias_labels, text="Vía: -")
+        self.label_via_id.pack(anchor=tk.W)
+        self.label_via_estaciones = ttk.Label(self.frame_info_vias_labels, text="Conecta: -")
+        self.label_via_estaciones.pack(anchor=tk.W)
+        self.label_via_longitud = ttk.Label(self.frame_info_vias_labels, text="Longitud: -")
+        self.label_via_longitud.pack(anchor=tk.W)
+        self.label_via_estado = ttk.Label(self.frame_info_vias_labels, text="Estado: -")
+        self.label_via_estado.pack(anchor=tk.W)
+        self.label_via_tipo = ttk.Label(self.frame_info_vias_labels, text="Tipo: -")
+        self.label_via_tipo.pack(anchor=tk.W)
+
     #inicia la simulacion con las estaciones base
     def iniciar_estaciones_base(self):
             self.estaciones_base = {
@@ -122,6 +150,110 @@ class Pestañas:
                 "Talca": Estacion("Talca", "TAL" , 242344, 1),
                 "Chillán": Estacion("Chillán", "CHL" , 204091, 1),
             }
+
+    def iniciar_vias_base(self):
+        """Inicializa las vías entre estaciones"""
+        # Normalizar nombres de estaciones para que coincidan con claves de self.estaciones_base
+        self.vias_base = [
+            Vias("V01", 100, "Santiago", "Rancagua", False, None),  # 100 km
+            Vias("V02", 200, "Santiago", "Chillán", False, None),  # 200 km
+        ]
+        # lista para trackear vias mostradas en canvas
+        self.vias_mostradas = []
+        # lista actual mostrada en listbox para mapear indices a vias
+        self.current_vias_list = list(self.vias_base)
+    
+    def dibujar_vias_por_estacion(self, nombre_estacion):
+        """Dibuja solo las vías relacionadas con la estación seleccionada"""
+        c = self.canvas
+        # Limpiar vías anteriores
+        self.limpiar_vias()
+        
+        if nombre_estacion is None:
+            return
+        # Encontrar todas las vías conectadas a esta estación
+        vias_conectadas = []
+        for via in self.vias_base:
+            if via.conexion_estacion_a == nombre_estacion or via.conexion_estacion_b == nombre_estacion:
+                vias_conectadas.append(via)
+         # Dibujar cada vía conectada
+        for via in vias_conectadas:
+            estacion_a = via.conexion_estacion_a
+            estacion_b = via.conexion_estacion_b
+            if estacion_a in self._posiciones and estacion_b in self._posiciones:
+                x1, y1 = self._posiciones[estacion_a]
+                x2, y2 = self._posiciones[estacion_b]
+                # Ajustar coordenadas al centro de los rectángulos
+                x1_centro = x1 + self._rect_w / 2
+                y1_centro = y1 + self._rect_h / 2
+                x2_centro = x2 + self._rect_w / 2
+                y2_centro = y2 + self._rect_h / 2
+
+                if via.estado == "ocupada":
+                    color_via = "#ff0000"  # Rojo para vías ocupadas
+                    grosor_via = 4
+                else:
+                    color_via = "#666666"  # Gris para vías normales
+                    grosor_via = 2
+
+                # Añadir tag común 'via_line' para poder limpiar y gestionar todas las vías
+                linea = c.create_line(x1_centro, y1_centro, x2_centro, y2_centro, 
+                                    fill=color_via, width=grosor_via, 
+                                    tags=(f"via_line", f"via_{via.id_via}"))
+                # bind onclick para la vía
+                try:
+                    c.tag_bind(f"via_{via.id_via}", '<Button-1>', self.via_seleccionada)
+                except Exception:
+                    pass
+                
+                self.vias_mostradas.append(via.id_via)
+
+    def limpiar_vias(self):
+        """Elimina todas las vías del canvas"""
+        c = self.canvas
+        # Eliminar todas las líneas de vías y sus etiquetas
+        # Eliminar todas las líneas de vías usando el tag común 'via_line'
+        for item in c.find_withtag('via_line'):
+            c.delete(item)
+        for item in c.find_withtag("etiqueta_via"):
+            c.delete(item)
+        self.vias_mostradas = []
+
+    def dibujar_todas_las_vias(self):
+        """Dibuja todas las vías (para cuando no hay estación seleccionada)"""
+        c = self.canvas
+        self.limpiar_vias()
+        
+        for via in self.vias_base:
+            estacion_a = via.conexion_estacion_a
+            estacion_b = via.conexion_estacion_b
+            
+            if estacion_a in self._posiciones and estacion_b in self._posiciones:
+                x1, y1 = self._posiciones[estacion_a]
+                x2, y2 = self._posiciones[estacion_b]
+                
+                # Ajustar coordenadas al centro de los rectángulos
+                x1_centro = x1 + self._rect_w / 2
+                y1_centro = y1 + self._rect_h / 2
+                x2_centro = x2 + self._rect_w / 2
+                y2_centro = y2 + self._rect_h / 2
+                
+                # Color más tenue para vías no seleccionadas
+                if via.estado == "ocupada":
+                    color_via = "#ff6666"  # Rojo claro para ocupadas
+                else:
+                    color_via = "#cccccc"  # Gris claro para normales
+                grosor_via = 2
+                # Dibujar la línea de la vía
+                linea = c.create_line(x1_centro, y1_centro, x2_centro, y2_centro, 
+                                    fill=color_via, width=grosor_via, 
+                                    tags=(f"via_line", f"via_{via.id_via}"))
+                try:
+                    c.tag_bind(f"via_{via.id_via}", '<Button-1>', self.via_seleccionada)
+                except Exception:
+                    pass
+                self.vias_mostradas.append(via.id_via)
+
     #funcion para dibujar estaciones en las coordenadas
     def dibujar_estaciones(self):
         c = self.canvas
@@ -185,13 +317,115 @@ class Pestañas:
             self.lista_estaciones.insert(tk.END, f"{estacion.nombre}")
     #al hacer click en una estacion mostrar su informacion y resaltarla
     def estacion_seleccionada(self, event):
+        """Maneja la selección de una estación en la lista"""
         seleccion = self.lista_estaciones.curselection()
         if seleccion:
             indice = seleccion[0]
             nombre_estacion = list(self.estaciones_base.keys())[indice]
+            self.estacion_seleccionada_actual = nombre_estacion
             estacion = self.estaciones_base[nombre_estacion]
             self.mostrar_informacion_estacion(estacion)
             self.resaltar_estacion(nombre_estacion)
+            # Mostrar solo las vías conectadas a esta estación
+            self.dibujar_vias_por_estacion(nombre_estacion)
+            # Actualizar lista de vías en el panel
+            self.actualizar_lista_vias_por_estacion(nombre_estacion)
+        else:
+            # Si no hay selección, mostrar todas las vías tenues
+            self.estacion_seleccionada_actual = None
+            self.dibujar_todas_las_vias()
+            self.actualizar_lista_vias_todas()
+
+    def actualizar_lista_vias_por_estacion(self, nombre_estacion):
+        """Actualiza la lista de vías mostrando solo las conectadas a la estación seleccionada"""
+        if hasattr(self, 'lista_vias'):
+            self.lista_vias.delete(0, tk.END)
+            
+            vias_conectadas = []
+            for via in self.vias_base:
+                if via.conexion_estacion_a == nombre_estacion or via.conexion_estacion_b == nombre_estacion:
+                    vias_conectadas.append(via)
+            # Guardar la lista actual mostrada para mapping de selección
+            self.current_vias_list = vias_conectadas
+            for via in vias_conectadas:
+                estado = "Libre" if via.estado == "desocupada" else "Ocupada"
+                otra_estacion = via.conexion_estacion_b if via.conexion_estacion_a == nombre_estacion else via.conexion_estacion_a
+                self.lista_vias.insert(tk.END, f"{via.id_via} → {otra_estacion} | {estado} | {via.longitud} km")
+
+    def actualizar_lista_vias_todas(self):
+        """Actualiza la lista de vías mostrando todas"""
+        if hasattr(self, 'lista_vias'):
+            self.lista_vias.delete(0, tk.END)
+            # Mostrar una única línea por vía y guardar la lista actual
+            self.current_vias_list = list(self.vias_base)
+            for via in self.vias_base:
+                estado = "Libre" if via.estado == "desocupada" else "Ocupada"
+                self.lista_vias.insert(tk.END, f"{via.id_via}: {via.conexion_estacion_a}-{via.conexion_estacion_b} | {estado} | {via.longitud}km")
+
+    def dibujar_elementos(self):
+        """Dibuja todos los elementos en la interfaz"""
+        c = self.canvas
+        
+        # Dibujar estaciones primero
+        try:
+            self.dibujar_estaciones()
+        except Exception as e:
+            print(f"Error dibujando estaciones: {e}")
+        
+        # Dibujar todas las vías inicialmente (tenues)
+        try:
+            self.dibujar_todas_las_vias()
+        except Exception as e:
+            print(f"Error dibujando vías: {e}")
+        
+        # Dibujar trenes
+        try:
+            if not hasattr(self, 'trenes_list'):
+                self.iniciar_trenes_base()
+            self.dibujar_trenes()
+            self.actualizar_lista_trenes()
+        except Exception as e:
+            print(f"Error dibujando trenes: {e}")
+        
+        # Actualizar lista de vías
+        self.actualizar_lista_vias_todas()
+
+    def via_seleccionada(self, event):
+        """Maneja la selección de una vía en la lista"""
+        # Detectar si la selección proviene del Listbox o del Canvas
+        widget = getattr(event, 'widget', None)
+        if widget == getattr(self, 'lista_vias', None):
+            seleccion = self.lista_vias.curselection()
+            if not seleccion:
+                return
+            indice = seleccion[0]
+            # usar la lista actual mostrada para obtener el objeto via
+            vias_mostradas = getattr(self, 'current_vias_list', None)
+            if vias_mostradas is None:
+                vias_mostradas = getattr(self, 'vias_base', [])
+            if 0 <= indice < len(vias_mostradas):
+                via = vias_mostradas[indice]
+                self.mostrar_informacion_via(via)
+                self.resaltar_via(via.id_via)
+            return
+        # Si no es el Listbox, asumir que es un click en el canvas
+        try:
+            c = self.canvas
+            item = c.find_closest(event.x, event.y)
+            tags = c.gettags(item)
+            via_id = None
+            for t in tags:
+                if isinstance(t, str) and t.startswith('via_'):
+                    via_id = t.split('_', 1)[1]
+                    break
+            if not via_id:
+                return
+            via = next((v for v in getattr(self, 'vias_base', []) if v.id_via == via_id), None)
+            if via:
+                self.mostrar_informacion_via(via)
+                self.resaltar_via(via.id_via)
+        except Exception:
+            return
 
     def mostrar_informacion_estacion(self, estacion):
         nombre = getattr(estacion, 'nombre', 'Desconocida')
@@ -205,6 +439,51 @@ class Pestañas:
         # Mostrar trenes como: número esperandos / capacidad si disponible
         self.label_trenes.config(text=f"Trenes: {trenes_esperando}/{capacidad_trenes}")
         self.label_poblacion.config(text=f"Población: {poblacion}")
+
+    def mostrar_informacion_via(self, via):
+        """Actualiza los labels de la via seleccionada en el panel lateral."""
+        if not via:
+            return
+        try:
+            self.label_via_id.config(text=f"Vía: {via.id_via}")
+            self.label_via_estaciones.config(text=f"Conecta: {via.conexion_estacion_a} - {via.conexion_estacion_b}")
+            self.label_via_longitud.config(text=f"Longitud: {via.longitud} km")
+            estado = "Libre" if getattr(via, 'estado', 'desocupada') == 'desocupada' else "Ocupada"
+            self.label_via_estado.config(text=f"Estado: {estado}")
+            tipo = "Rotatoria" if getattr(via, 'via_rotatoria', False) else "Normal"
+            self.label_via_tipo.config(text=f"Tipo: {tipo}")
+        except Exception:
+            pass
+
+    def resaltar_via(self, via_id):
+        """Resalta la vía especificada en el canvas y despeja resaltado de otras vías."""
+        c = self.canvas
+        # resetear todas las vías a su color base
+        try:
+            for item in c.find_withtag('via_line'):
+                # Encontrar a qué via pertenece por tags
+                tags = c.gettags(item)
+                cur_via_id = None
+                for t in tags:
+                    if isinstance(t, str) and t.startswith('via_') and t != 'via_line':
+                        cur_via_id = t.split('_', 1)[1]
+                        break
+                # Obterner estado del objeto via para pintar acorde
+                via_obj = next((v for v in getattr(self, 'vias_base', []) if v.id_via == cur_via_id), None)
+                if via_obj and via_obj.estado == 'ocupada':
+                    c.itemconfig(item, fill='#ff6666', width=4)
+                else:
+                    c.itemconfig(item, fill='#cccccc', width=2)
+        except Exception:
+            pass
+        # Ahora resaltar la seleccionada en verde oscuro
+        try:
+            if via_id is None:
+                return
+            for item in c.find_withtag(f'via_{via_id}'):
+                c.itemconfig(item, fill='#00aa00', width=4)
+        except Exception:
+            pass
 
     #al cambiar pestañas se ocultn los botones
     def cambio_de_pestañas(self, event=None):
@@ -232,7 +511,7 @@ class Pestañas:
         return False
 
     def dibujar_elementos(self):
-        """Dibuja los elementos principales en el canvas: estaciones y trenes."""
+        #dibujar elementos en la interfaz
         c = self.canvas
         # Dibujar estaciones primero
         try:
@@ -340,6 +619,8 @@ class Pestañas:
             tag_sel = f'estacion_{nombre}'
             c.itemconfig(tag_sel, outline='#ff0000', width=3)
 
+    # Vías integration removed — reverted to prior state
+
     #funcion para crear el ui del reloj 
     def crear_ui_reloj(self):
         frame_reloj = ttk.Frame(self.frame_simulacion)
@@ -364,6 +645,7 @@ class Pestañas:
         # avanzar segundos y actualizar
         self.reloj.avanzar_segundos(1)
         self.actualizar_ui_reloj()
+        # (Movement integration removed) — el reloj solo avanza la hora y actualiza la UI
         # reprogramar si está corriendo
         if self._reloj_running:
             self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
@@ -384,5 +666,3 @@ class Pestañas:
                 except Exception:
                     pass
                 self._reloj_after_id = None
-
-    
