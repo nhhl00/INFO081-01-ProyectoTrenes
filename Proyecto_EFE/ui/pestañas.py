@@ -58,6 +58,8 @@ class Pestañas:
         #llamar a dibujar elementos paara inicializar datos y dibujar elementos estáticos
         self.dibujar_elementos()
 
+        # movement controller removed — no MovimientoDeTrenes integration
+
         # Añadir pestañas
         self.notebook.add(self.frame_inicio, text="Inicio")
         self.notebook.add(self.frame_config, text="Configuracion")
@@ -66,12 +68,12 @@ class Pestañas:
         #mantener índice de pestaña simulación
         self.sim_index = 2
 
-        #el usuario cambie a otra pestaña, los botones cambian: algunos se esconden y otros aparecen
+        #Bind al cambio de pestaña para mostrar/ocultar botones (vincular cambio de pestañas a ocultmiento de botones)
         self.notebook.bind('<<NotebookTabChanged>>', self.cambio_de_pestañas)
         self.cambio_de_pestañas()
     #panel para estaciones y trenes
     def panel_estaciones(self):
-        #ventana para estaciones
+        #frame para estaciones
         self.frame_info_estaciones = ttk.LabelFrame(self.frame_simulacion, text="Estaciones")
         self.frame_info_estaciones.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=10)
         
@@ -95,7 +97,7 @@ class Pestañas:
 
 
     def panel_trenes(self):
-        #ventana para trenes
+        #Frame para trenes
         self.frame_info_trenes = ttk.LabelFrame(self.frame_simulacion, text="Trenes")
         self.frame_info_trenes.pack(side=tk.LEFT, fill=tk.BOTH, padx=10, pady=10)
         
@@ -200,11 +202,11 @@ class Pestañas:
                     color_via = "#666666"  # Gris para vías normales
                     grosor_via = 2
 
-                # Añadir 'via_line' para poder limpiar y gestionar todas las vías
+                # Añadir tag común 'via_line' para poder limpiar y gestionar todas las vías
                 linea = c.create_line(x1_centro, y1_centro, x2_centro, y2_centro, 
                                     fill=color_via, width=grosor_via, 
                                     tags=(f"via_line", f"via_{via.id_via}"))
-                
+                # bind onclick para la vía
                 try:
                     c.tag_bind(f"via_{via.id_via}", '<Button-1>', self.via_seleccionada)
                 except Exception:
@@ -242,7 +244,7 @@ class Pestañas:
                 x2_centro = x2 + self._rect_w / 2
                 y2_centro = y2 + self._rect_h / 2
                 
-                
+                # Color más tenue para vías no seleccionadas
                 if via.estado == "ocupada":
                     color_via = "#ff6666"  # Rojo claro para ocupadas
                 else:
@@ -338,12 +340,13 @@ class Pestañas:
             # Actualizar lista de vías en el panel
             self.actualizar_lista_vias_por_estacion(nombre_estacion)
         else:
-            # Si no hay selección, mostrar todas las vías colores claros
+            # Si no hay selección, mostrar todas las vías tenues
             self.estacion_seleccionada_actual = None
             self.dibujar_todas_las_vias()
             self.actualizar_lista_vias_todas()
 
     def actualizar_lista_vias_por_estacion(self, nombre_estacion):
+        """Actualiza la lista de vías mostrando solo las conectadas a la estación seleccionada"""
         if hasattr(self, 'lista_vias'):
             self.lista_vias.delete(0, tk.END)
             
@@ -447,7 +450,6 @@ class Pestañas:
         self.label_poblacion.config(text=f"Población: {poblacion}")
 
     def mostrar_informacion_via(self, via):
-        """Actualiza los labels de la via seleccionada en el panel lateral."""
         if not via:
             return
         try:
@@ -462,7 +464,6 @@ class Pestañas:
             pass
 
     def resaltar_via(self, via_id):
-        """Resalta la vía especificada en el canvas y despeja resaltado de otras vías."""
         c = self.canvas
         # resetear todas las vías a su color base
         try:
@@ -651,7 +652,7 @@ class Pestañas:
         # avanzar segundos y actualizar
         self.reloj.avanzar_segundos(1)
         self.actualizar_ui_reloj()
-        # el reloj solo avanza la hora y actualiza la UI
+        # (Movement integration removed) — el reloj solo avanza la hora y actualiza la UI
         # reprogramar si está corriendo
         if self._reloj_running:
             self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
