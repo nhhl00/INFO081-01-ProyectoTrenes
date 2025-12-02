@@ -874,6 +874,15 @@ class Pestañas:
             boton_eventos_local.pack(padx=4, pady=2)
         except Exception:
             pass
+        # Opción: detener simulación cuando no queden eventos
+        try:
+            self._stop_when_empty_var = tk.BooleanVar(value=True)
+            chk = ttk.Checkbutton(frame_reloj, text='Detener al terminar eventos', variable=self._stop_when_empty_var)
+            chk.pack(padx=4, pady=2)
+        except Exception:
+            self._stop_when_empty_var = tk.BooleanVar(value=True)
+
+        # (Botón 'Procesar eventos ahora' eliminado a petición del usuario)
         # Mostrar la hora inicial
         self.actualizar_ui_reloj()
     #funcion para actualizar la ui del reloj junto a los ticks
@@ -901,11 +910,24 @@ class Pestañas:
                         self.actualizar_lista_trenes()
                     except Exception:
                         pass
+                    # Si no quedan eventos y la opción está activa, detener el reloj
+                    try:
+                        eventos_restantes = len(self.gestor_eventos.listar_eventos())
+                        if eventos_restantes == 0 and getattr(self, '_stop_when_empty_var', None) is not None and self._stop_when_empty_var.get():
+                            try:
+                                self.parar_reloj()
+                                messagebox.showinfo('Simulación', 'Todos los eventos fueron procesados. Simulación detenida.')
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
         except Exception:
             pass
         # reprogramar si está corriendo
         if self._reloj_running:
             self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
+
+    # Nota: método procesar_eventos_ahora eliminado según solicitud del usuario
 
     def empezar_reloj(self):
         # inicia el avance del reloj 
