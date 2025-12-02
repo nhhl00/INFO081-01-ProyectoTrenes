@@ -9,7 +9,7 @@ estado = EstadoSimulacion()
 estado.estaciones = {"Santiago": {"nombre":"Santiago"}}
 estado.vias = []
 estado.trenes = []
-# crear evento a 2 segundos
+
 ev = Evento(estado.hora_actual.fecha_hora + dt.timedelta(seconds=2), 'test_event', {'msg':'hola'})
 estado.registrar_evento(ev)
 sg = SistemaGuardado(directorio='saves_test')
