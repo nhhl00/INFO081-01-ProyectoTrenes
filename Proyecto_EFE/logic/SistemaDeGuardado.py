@@ -12,8 +12,9 @@ class SistemaGuardado:
     def guardar_simluacion(self, estado, nombre_archivo):
         try:
             datos = {
-                "hora_actual": estado.hora_actual.isoformat(),
+                "hora_actual": getattr(estado, 'hora_actual').fecha_hora.isoformat() if hasattr(estado, 'hora_actual') else None,
                 "estaciones": getattr(estado, "estaciones", []),
+                "vias": getattr(estado, 'vias', []),
                 "trenes": getattr(estado, "trenes", []),
                 "eventos": getattr(estado, "eventos", []),
                 "pasajeros_activos": getattr(estado, "pasajeros_activos", [])
@@ -36,11 +37,21 @@ class SistemaGuardado:
 
             from .EstadoDeSimulacion import EstadoSimulacion
             estado = EstadoSimulacion()
-            estado.hora_actual = datetime.datetime.fromisoformat(datos["hora_actual"])
-            estado.estaciones = datos.get("estaciones", [])
+            # restaurar hora
+            try:
+                if datos.get("hora_actual"):
+                    estado.hora_actual.fecha_hora = datetime.datetime.fromisoformat(datos.get("hora_actual"))
+            except Exception:
+                pass
+            estado.estaciones = datos.get("estaciones", {})
+            estado.vias = datos.get("vias", [])
             estado.trenes = datos.get("trenes", [])
-            estado.eventos = datos.get("eventos", [])
-            estado_pasajeros_activos = datos.get("pasajeros_activos", [])
+            # cargar eventos (lista de dicts)
+            try:
+                estado.cargar_eventos_desde_lista(datos.get("eventos", []))
+            except Exception:
+                pass
+            estado.pasajeros_activos = datos.get("pasajeros_activos", [])
             return estado
         except Exception as e:
             print(f"Error cargando: {e}")

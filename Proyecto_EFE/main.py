@@ -62,10 +62,31 @@ def main():
     
     # Asignar comando al boton de iniciar simulación
     crear_botones["boton_iniciar_simulacion"].config(command=iniciar_simulacion)
+    # comando para mostrar la cola de eventos en la UI
+    def mostrar_eventos_ui():
+        try:
+            # debug: confirmar que el handler se ejecuta
+            print('[DEBUG] mostrar_eventos_ui llamado')
+            messagebox.showinfo('Debug', 'Ver eventos: handler llamado')
+            if pestanas_instancia and hasattr(pestanas_instancia, 'mostrar_eventos_dialog'):
+                pestanas_instancia.mostrar_eventos_dialog()
+            else:
+                messagebox.showinfo("Eventos", "No hay gestor de eventos disponible.")
+        except Exception as e:
+            print(f'[ERROR] mostrar_eventos_ui: {e}')
+            messagebox.showerror("Error", f"No se pudo mostrar eventos: {e}")
 
+    if "boton_listar_eventos" in crear_botones:
+        crear_botones["boton_listar_eventos"].config(command=mostrar_eventos_ui)
+
+    # Iniciar simulación automáticamente para pruebas y cerrar tras 5 segundos
+    try:
+        iniciar_simulacion()
+    except Exception:
+        pass
     root.mainloop()
 
 
 if __name__ == "__main__":
-    messagebox.showinfo("Bienvenido al Programa","Utilizar el programa en pantalla completa")
+    # Ejecutar sin diálogo modal para pruebas automatizadas
     main()

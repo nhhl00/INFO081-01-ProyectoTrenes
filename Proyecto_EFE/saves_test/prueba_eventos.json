@@ -1,0 +1,21 @@
+{
+  "hora_actual": "2015-03-01T07:00:00",
+  "estaciones": {
+    "Santiago": {
+      "nombre": "Santiago"
+    }
+  },
+  "vias": [],
+  "trenes": [],
+  "eventos": [
+    {
+      "tiempo": "2015-03-01T07:00:02",
+      "tipo": "test_event",
+      "datos": {
+        "msg": "hola"
+      },
+      "id": "4d8cf560-4143-4b65-8885-0fcfec088b30"
+    }
+  ],
+  "pasajeros_activos": []
+}

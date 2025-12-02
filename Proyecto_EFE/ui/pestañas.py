@@ -4,6 +4,8 @@ from tkinter import messagebox
 from config import COLOR_TRENES, BORDE_TRENES
 from models import Estacion, Tren, Vias
 from logic import horaActual
+import datetime as dt
+from logic.eventos import GestorEventos, Evento
 
 trenes = [
     Tren("BMU", "T01", 236, 160, ["Santiago", "Rancagua","Santiago","Chillán"], "Santiago", 4),
@@ -55,6 +57,55 @@ class Pestañas:
         self.panel_vias()
         #llamar a las vias base
         self.iniciar_vias_base()
+        # Gestor de eventos: controla movimientos programados de trenes
+        try:
+            self.gestor_eventos = GestorEventos()
+            # Agendar movimientos iniciales para los trenes que tengan destino
+            for tren in getattr(self, 'trenes_list', []):
+                try:
+                    origen = getattr(tren, 'estacion_actual', None)
+                    prox = tren.proximo_destino()
+                    if origen and prox:
+                        via = self.gestor_eventos._encontrar_via(self.vias_base, origen, prox)
+                        if via:
+                            # Para pruebas rápidas fijamos el primer evento a las 07:02
+                            try:
+                                fecha = self.reloj.fecha_hora.date()
+                                nuevo_tiempo = dt.datetime.combine(fecha, dt.time(7, 2, 0))
+                                # si ya pasó esa hora hoy, dejarlo 1 minuto adelante
+                                if nuevo_tiempo <= self.reloj.fecha_hora:
+                                    nuevo_tiempo = self.reloj.fecha_hora + dt.timedelta(minutes=1)
+                            except Exception:
+                                # fallback al cálculo por defecto si algo falla
+                                velocidad = getattr(tren, 'velocidad_constante', 60) or 60
+                                horas = via.longitud / velocidad
+                                segundos = int(horas * 3600)
+                                if segundos <= 0:
+                                    segundos = 1
+                                nuevo_tiempo = self.reloj.fecha_hora + dt.timedelta(seconds=segundos)
+                            ev = Evento(nuevo_tiempo, 'mover_tren', {'id_tren': tren.id_tren})
+                            self.gestor_eventos.agendar(ev)
+                except Exception:
+                    pass
+                # Agendar evento de retorno a Santiago a las 07:05 para el primer tren (prueba)
+                try:
+                    if self.trenes_list:
+                        tren0 = self.trenes_list[0]
+                        fecha = self.reloj.fecha_hora.date()
+                        retorno_tiempo = dt.datetime.combine(fecha, dt.time(7, 5, 0))
+                        if retorno_tiempo <= self.reloj.fecha_hora:
+                            retorno_tiempo = self.reloj.fecha_hora + dt.timedelta(minutes=1)
+                        ev2 = Evento(retorno_tiempo, 'forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Santiago'})
+                        self.gestor_eventos.agendar(ev2)
+                        # Si por alguna razón hay duplicados, eliminar el último para que quede uno solo
+                        try:
+                            self.gestor_eventos.eliminar_ultimo_duplicado('forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Santiago'})
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+        except Exception:
+            self.gestor_eventos = None
         #llamar a dibujar elementos paara inicializar datos y dibujar elementos estáticos
         self.dibujar_elementos()
 
@@ -101,49 +152,83 @@ class Pestañas:
         #Frame para trenes
         self.frame_info_trenes = ttk.LabelFrame(self.frame_simulacion, text="Trenes")
         self.frame_info_trenes.pack(side=tk.LEFT, fill=tk.BOTH, padx=10, pady=10)
-        
-        #Lista de trenes
-        self.lista_trenes = tk.Listbox(self.frame_info_trenes, height=5, width=25)
-        self.lista_trenes.pack(padx=2, pady=2, fill=tk.X)
+        # Listbox de trenes
+        self.lista_trenes = tk.Listbox(self.frame_info_trenes, height=8, width=24)
+        self.lista_trenes.pack(padx=5, pady=5, fill=tk.X)
         self.lista_trenes.bind('<<ListboxSelect>>', self.tren_seleccionado)
-        
-        #Información de trenes
-        self.frame_detalles_tren = ttk.Frame(self.frame_info_trenes)
-        self.frame_detalles_tren.pack(padx=2, pady=4, fill=tk.X)
-        self.label_tren_nombre = ttk.Label(self.frame_detalles_tren, text="Tren: ")
+
+        # Frame con labels para información del tren seleccionado
+        self.frame_info_tren_labels = ttk.Frame(self.frame_info_trenes)
+        self.frame_info_tren_labels.pack(padx=5, pady=5, fill=tk.X)
+
+        self.label_tren_nombre = ttk.Label(self.frame_info_tren_labels, text="Tren: ")
         self.label_tren_nombre.pack(anchor=tk.W)
-        self.label_tren_id = ttk.Label(self.frame_detalles_tren, text="ID: ")
+        self.label_tren_id = ttk.Label(self.frame_info_tren_labels, text="ID: ")
         self.label_tren_id.pack(anchor=tk.W)
-        self.label_tren_cap = ttk.Label(self.frame_detalles_tren, text="Capacidad: ")
+        self.label_tren_cap = ttk.Label(self.frame_info_tren_labels, text="Capacidad: ")
         self.label_tren_cap.pack(anchor=tk.W)
-        self.label_tren_vel = ttk.Label(self.frame_detalles_tren, text="Velocidad: ")
+        self.label_tren_vel = ttk.Label(self.frame_info_tren_labels, text="Velocidad: ")
         self.label_tren_vel.pack(anchor=tk.W)
-        self.label_tren_estado = ttk.Label(self.frame_detalles_tren, text="Estado: ")
+        self.label_tren_estado = ttk.Label(self.frame_info_tren_labels, text="Estado: ")
         self.label_tren_estado.pack(anchor=tk.W)
-        # Label para mostrar la ruta seleccionada
-        self.label_tren_ruta = ttk.Label(self.frame_detalles_tren, text="Ruta: ")
+        self.label_tren_ruta = ttk.Label(self.frame_info_tren_labels, text="Ruta: ")
         self.label_tren_ruta.pack(anchor=tk.W)
 
+        try:
+            # Instanciar gestor de eventos y agendar dos eventos explícitos para pruebas:
+            # 1) mover primer tren a Rancagua a las 07:02
+            # 2) forzar retorno a Santiago a las 07:05
+            self.gestor_eventos = GestorEventos()
+            try:
+                if getattr(self, 'trenes_list', None) and len(self.trenes_list) > 0:
+                    tren0 = self.trenes_list[0]
+                    fecha = self.reloj.fecha_hora.date()
+                    # evento 07:02 -> Rancagua
+                    tiempo1 = dt.datetime.combine(fecha, dt.time(7, 2, 0))
+                    if tiempo1 <= self.reloj.fecha_hora:
+                        tiempo1 = self.reloj.fecha_hora + dt.timedelta(minutes=1)
+                    ev1 = Evento(tiempo1, 'forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Rancagua'})
+                    self.gestor_eventos.agendar(ev1)
+                    # evento 07:05 -> Santiago
+                    tiempo2 = dt.datetime.combine(fecha, dt.time(7, 5, 0))
+                    if tiempo2 <= self.reloj.fecha_hora:
+                        tiempo2 = self.reloj.fecha_hora + dt.timedelta(minutes=2)
+                    ev2 = Evento(tiempo2, 'forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Santiago'})
+                    self.gestor_eventos.agendar(ev2)
+                    # eliminar duplicados si llegaron a existir
+                    try:
+                        self.gestor_eventos.eliminar_ultimo_duplicado('forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Rancagua'})
+                        self.gestor_eventos.eliminar_ultimo_duplicado('forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Santiago'})
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        except Exception:
+            self.gestor_eventos = None
+
     def panel_vias(self):
-        self.frame_info_vias = ttk.LabelFrame(self.frame_simulacion, text="Vías - Conexiones")
-        self.frame_info_vias.pack(side=tk.RIGHT, fill=tk.Y, padx=5, pady=10)
-        # Lista de vías
-        self.lista_vias = tk.Listbox(self.frame_info_vias, height=10, width=25)
-        self.lista_vias.pack(padx=5, pady=5, fill=tk.BOTH, expand=True)
+        # Panel para mostrar vías y sus detalles
+        self.frame_info_vias = ttk.LabelFrame(self.frame_simulacion, text="Vías")
+        self.frame_info_vias.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=10)
+
+        # Listbox con las vías
+        self.lista_vias = tk.Listbox(self.frame_info_vias, height=10, width=30)
+        self.lista_vias.pack(padx=5, pady=5, fill=tk.X)
         self.lista_vias.bind('<<ListboxSelect>>', self.via_seleccionada)
-        # Información detallada de la vía seleccionada
-        self.frame_info_vias_labels = ttk.Frame(self.frame_info_vias)
-        self.frame_info_vias_labels.pack(padx=5, pady=5, fill=tk.X)
-    
-        self.label_via_id = ttk.Label(self.frame_info_vias_labels, text="Vía: -")
+
+        # Frame con labels de información de la vía seleccionada
+        self.frame_info_via_labels = ttk.Frame(self.frame_info_vias)
+        self.frame_info_via_labels.pack(padx=5, pady=5, fill=tk.X)
+
+        self.label_via_id = ttk.Label(self.frame_info_via_labels, text="Vía: ")
         self.label_via_id.pack(anchor=tk.W)
-        self.label_via_estaciones = ttk.Label(self.frame_info_vias_labels, text="Conecta: -")
+        self.label_via_estaciones = ttk.Label(self.frame_info_via_labels, text="Conecta: ")
         self.label_via_estaciones.pack(anchor=tk.W)
-        self.label_via_longitud = ttk.Label(self.frame_info_vias_labels, text="Longitud: -")
+        self.label_via_longitud = ttk.Label(self.frame_info_via_labels, text="Longitud: ")
         self.label_via_longitud.pack(anchor=tk.W)
-        self.label_via_estado = ttk.Label(self.frame_info_vias_labels, text="Estado: -")
+        self.label_via_estado = ttk.Label(self.frame_info_via_labels, text="Estado: ")
         self.label_via_estado.pack(anchor=tk.W)
-        self.label_via_tipo = ttk.Label(self.frame_info_vias_labels, text="Tipo: -")
+        self.label_via_tipo = ttk.Label(self.frame_info_via_labels, text="Tipo: ")
         self.label_via_tipo.pack(anchor=tk.W)
 
     #inicia la simulacion con las estaciones base
@@ -620,6 +705,123 @@ class Pestañas:
         # Mostrar ruta del tren en el canvas
         self.mostrar_ruta_tren(tren)
 
+    def mostrar_eventos_dialog(self):
+        """Muestra la cola de eventos en un diálogo modal para depuración."""
+        try:
+            print('[DEBUG] mostrar_eventos_dialog llamado')
+            eventos = []
+            # preferir el gestor de eventos de la propia pestaña
+            if getattr(self, 'gestor_eventos', None) is not None:
+                print('[DEBUG] usando self.gestor_eventos')
+                eventos = self.gestor_eventos.listar_eventos()
+            # si existe un sistema externo con estado, usarlo
+            elif getattr(self, 'sistema', None) is not None and hasattr(self.sistema, 'gestor_eventos'):
+                print('[DEBUG] usando sistema.gestor_eventos')
+                eventos = self.sistema.gestor_eventos.listar_eventos()
+
+            print(f'[DEBUG] eventos obtenidos: {type(eventos)} len={len(eventos) if hasattr(eventos, "__len__") else "?"}')
+
+            if not eventos:
+                messagebox.showinfo("Eventos", "No hay eventos programados.")
+                return
+            # Normalizar distintos formatos posibles de 'eventos'
+            # Vamos a mostrar los eventos en un Listbox con botones para eliminar
+            # Normalizar la colección de eventos a una lista de objetos/dicts
+            if isinstance(eventos, dict):
+                eventos = [eventos]
+            if not isinstance(eventos, (list, tuple)) and hasattr(eventos, 'listar_eventos'):
+                try:
+                    eventos = eventos.listar_eventos()
+                except Exception:
+                    eventos = list(eventos)
+            try:
+                iterator = iter(eventos)
+            except TypeError:
+                eventos = [eventos]
+
+            # Crear ventana y listbox
+            top = tk.Toplevel(self.parent)
+            top.title("Cola de eventos")
+            top.geometry('600x320')
+
+            frame_list = ttk.Frame(top)
+            frame_list.pack(fill=tk.BOTH, expand=True)
+
+            lb = tk.Listbox(frame_list, selectmode=tk.SINGLE)
+            lb.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            scrollbar = ttk.Scrollbar(frame_list, orient=tk.VERTICAL, command=lb.yview)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            lb.config(yscrollcommand=scrollbar.set)
+
+            # Mapear índices a event ids
+            idx_to_id = []
+            for e in eventos:
+                try:
+                    if hasattr(e, 'tiempo') or hasattr(e, 'tipo'):
+                        tiempo = getattr(e, 'tiempo', None)
+                        tipo = getattr(e, 'tipo', '')
+                        datos = getattr(e, 'datos', {})
+                        id_ev = getattr(e, 'id', '')
+                    elif isinstance(e, dict):
+                        tiempo = e.get('tiempo')
+                        tipo = e.get('tipo', '')
+                        datos = e.get('datos', {})
+                        id_ev = e.get('id', '')
+                    else:
+                        tiempo = ''
+                        tipo = ''
+                        datos = str(e)
+                        id_ev = ''
+                    display = f"{tiempo} | {tipo} | {datos} | id={id_ev}"
+                except Exception:
+                    display = str(e)
+                    id_ev = getattr(e, 'id', '') if hasattr(e, 'id') else ''
+                lb.insert(tk.END, display)
+                idx_to_id.append(id_ev)
+
+            # Botones de acción
+            frame_buttons = ttk.Frame(top)
+            frame_buttons.pack(fill=tk.X)
+
+            def eliminar_seleccionado():
+                sel = lb.curselection()
+                if not sel:
+                    messagebox.showinfo('Eliminar', 'Seleccione un evento primero.')
+                    return
+                i = sel[0]
+                event_id = idx_to_id[i]
+                if not event_id:
+                    messagebox.showerror('Eliminar', 'Evento sin id, no se puede eliminar.')
+                    return
+                gestor = getattr(self, 'gestor_eventos', None) or (getattr(self, 'sistema', None) and getattr(self.sistema, 'gestor_eventos', None))
+                if not gestor:
+                    messagebox.showerror('Eliminar', 'No hay gestor de eventos disponible.')
+                    return
+                try:
+                    ok = gestor.eliminar_evento_por_id(event_id)
+                    if ok:
+                        lb.delete(i)
+                        idx_to_id.pop(i)
+                        messagebox.showinfo('Eliminar', 'Evento eliminado.')
+                    else:
+                        messagebox.showerror('Eliminar', 'Evento no encontrado.')
+                except Exception as ex:
+                    messagebox.showerror('Eliminar', f'Error al eliminar: {ex}')
+
+            btn_eliminar = ttk.Button(frame_buttons, text='Eliminar seleccionado', command=eliminar_seleccionado)
+            btn_eliminar.pack(side=tk.LEFT, padx=6, pady=6)
+
+            btn_cerrar = ttk.Button(frame_buttons, text='Cerrar', command=top.destroy)
+            btn_cerrar.pack(side=tk.RIGHT, padx=6, pady=6)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            try:
+                messagebox.showerror("Error", f"No se pudo obtener la lista de eventos: {e}")
+            except Exception:
+                pass
+
     #funcion para resaltar tren
     def resaltar_tren(self, nombre):
         c = self.canvas
@@ -702,6 +904,12 @@ class Pestañas:
         self.label_reloj = ttk.Label(frame_reloj, text="", font=('Arial', 8))
         self.label_reloj.pack()
 
+        # Botón para ver la cola de eventos (está dentro de la pestaña Simulación)
+        try:
+            boton_eventos_local = ttk.Button(frame_reloj, text="Ver eventos", command=self.mostrar_eventos_dialog)
+            boton_eventos_local.pack(padx=4, pady=2)
+        except Exception:
+            pass
         # Mostrar la hora inicial
         self.actualizar_ui_reloj()
     #funcion para actualizar la ui del reloj junto a los ticks
@@ -717,7 +925,20 @@ class Pestañas:
         # avanzar segundos y actualizar
         self.reloj.avanzar_segundos(1)
         self.actualizar_ui_reloj()
-        # (Movement integration removed) — el reloj solo avanza la hora y actualiza la UI
+        # Procesar eventos programados hasta la hora actual (movimientos de trenes)
+        try:
+            if getattr(self, 'gestor_eventos', None) is not None:
+                procesados = self.gestor_eventos.procesar_hasta(self.reloj.fecha_hora, self.estaciones_base, self.vias_base, self.trenes_list)
+                if procesados:
+                    # Redibujar para reflejar cambios de posición
+                    try:
+                        self.dibujar_estaciones()
+                        self.dibujar_trenes()
+                        self.actualizar_lista_trenes()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         # reprogramar si está corriendo
         if self._reloj_running:
             self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
