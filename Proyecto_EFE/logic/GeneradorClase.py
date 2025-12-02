@@ -21,9 +21,9 @@ class Generador(ABC):
         self.hora_apertura = hora_apertura
         self.hora_cierre = hora_cierre
 
-        self.current_datetime: dt.datetime = fecha_inicial
+        self.datetime_actual: dt.datetime = fecha_inicial
 
-    def minutos_de_funcionamiento(self) -> int:
+    def minutos_transcurridos(self) -> int:
         horas = self.hora_cierre.hour - self.hora_apertura.hour
         return horas * 60
 

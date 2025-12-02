@@ -1,5 +1,9 @@
 import datetime as dt
 from .eventos import GestorEventos, Evento
+from models import Estacion
+from models import Pasajero
+from logic import GeneradorPersonas
+from models import Vias
 
 
 class horaActual:
@@ -63,6 +67,31 @@ class EstadoSimulacion:
         self.trenes = []
         self.pasajeros_activos = []
         self.gestor_eventos = GestorEventos()
+        self.rutas_para_pasajeros = {}
+
+    def construir_rutas_para_pasajeros(self):
+        self.rutas_para_pasajeros = {}
+        for via in self.vias:
+            estacion_a = via.conexion_estacion_a
+            estacion_b = via.conexion_estacion_b
+            # Ruta de A hacia B
+            if estacion_a not in self.rutas_para_pasajeros:
+                self.rutas_para_pasajeros[estacion_a] = []
+            self.rutas_paraa_pasajeros[estacion_a].append(estacion_b)
+        
+            # también permite la ruta de B hacia A
+            if via.via_rotatoria:
+                if estacion_b not in self.rutas_para_pasajeros:
+                    self.rutas_para_pasajeros[estacion_b] = []
+            self.rutas_para_pasajeros[estacion_b].append(estacion_a)
+
+
+    def generar_demanda(self,minutos:int):
+        # Usamos el mapa de rutas de pasajeros
+        rutas_disponibles = self.rutas_para_pasajeros
+    
+        for estacion in self.estaciones.values():
+            clientes = estacion.generador.generar_clientes(minutos=minutos, constructor=Pasajero,estacion_origen=estacion,rutas=rutas_disponibles,)
 
     # lista de eventos: registrar, listar y procesar
     def registrar_evento(self, evento):
@@ -110,18 +139,3 @@ class EstadoSimulacion:
     @property
     def eventos(self):
         return self.listar_eventos()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
