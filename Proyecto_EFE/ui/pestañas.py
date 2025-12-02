@@ -4,6 +4,7 @@ from tkinter import messagebox
 from config import COLOR_TRENES, BORDE_TRENES
 from models import Estacion, Tren, Vias
 from logic import horaActual
+from logic.EstadoDeSimulacion import EstadoSimulacion
 import datetime as dt
 from logic.eventos import GestorEventos, Evento
 
@@ -35,6 +36,8 @@ class Pestañas:
         # estados para manejo del after() del reloj
         self._reloj_running = False
         self._reloj_after_id = None
+        # contador para generación periódica de pasajeros (en segundos simulados)
+        self._seconds_since_last_generation = 0
         self.crear_ui_reloj()
 
         # Titulos de las pestañas
@@ -45,19 +48,38 @@ class Pestañas:
         self.canvas = tk.Canvas(self.frame_simulacion, width=640, height=240, bg="#ffffff")
         self.canvas.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        #llamar a panel de estaciones
+        # llamar a panel de estaciones y crear datos base
         self.panel_estaciones()
-        #llamar a las estaciones base
         self.iniciar_estaciones_base()
-        #llamar a los trenes base
-        self.iniciar_trenes_base()
-        #llamar a panel de trenes
-        self.panel_trenes()
-        #llamar a panel vias
-        self.panel_vias()
-        #llamar a las vias base
+        # inicializar vías y trenes base antes de crear el Estado de Simulación
         self.iniciar_vias_base()
-        #llamar a dibujar elementos paara inicializar datos y dibujar elementos estáticos
+        self.iniciar_trenes_base()
+
+        # Crear EstadoSimulacion y sincronizar estructuras compartidas
+        try:
+            self.estado_sim = EstadoSimulacion()
+            # usar el mismo reloj
+            self.estado_sim.hora_actual = self.reloj
+            # vincular referencias (usar objetos existentes en UI)
+            self.estado_sim.estaciones = self.estaciones_base
+            self.estado_sim.vias = self.vias_base
+            self.estado_sim.trenes = self.trenes_list
+            # construir mapa de rutas para la generación de pasajeros
+            try:
+                self.estado_sim.construir_rutas_para_pasajeros()
+            except Exception:
+                pass
+            # exponer el gestor de eventos para la UI
+            self.gestor_eventos = self.estado_sim.gestor_eventos
+        except Exception:
+            self.estado_sim = None
+            self.gestor_eventos = None
+
+        # paneles que dependen de las listas previas
+        self.panel_trenes()
+        self.panel_vias()
+
+        # dibujar elementos paara inicializar datos y dibujar elementos estáticos
         self.dibujar_elementos()
 
         # movement controller removed — no MovimientoDeTrenes integration
@@ -97,6 +119,9 @@ class Pestañas:
         self.label_trenes.pack(anchor=tk.W)
         self.label_poblacion = ttk.Label(self.frame_info_para_labels, text="Población: ")
         self.label_poblacion.pack(anchor=tk.W)
+        # Label para mostrar pasajeros en espera en la estación seleccionada
+        self.label_pasajeros = ttk.Label(self.frame_info_para_labels, text="Pasajeros en espera: 0")
+        self.label_pasajeros.pack(anchor=tk.W)
 
 
     def panel_trenes(self):
@@ -126,10 +151,11 @@ class Pestañas:
         self.label_tren_ruta.pack(anchor=tk.W)
 
         try:
-            # Instanciar gestor de eventos y agendar dos eventos explícitos para pruebas:
+            # Usar el gestor de eventos compartido (creado en EstadoSimulacion)
+            # Agendar dos eventos explícitos para pruebas:
             # 1) mover primer tren a Rancagua a las 07:02
             # 2) forzar retorno a Santiago a las 07:05
-            self.gestor_eventos = GestorEventos()
+            # self.gestor_eventos ya debe estar inicializado desde EstadoSimulacion
             try:
                 if getattr(self, 'trenes_list', None) and len(self.trenes_list) > 0:
                     tren0 = self.trenes_list[0]
@@ -315,8 +341,17 @@ class Pestañas:
     #funcion para dibujar estaciones en las coordenadas
     def dibujar_estaciones(self):
         c = self.canvas
-        # Borrar todo y redibujar estaciones
-        c.delete("all")
+        # Borrar solo estaciones, vías y etiquetas de pasajeros (preservar trenes)
+        for item in c.find_withtag('estacion'):
+            c.delete(item)
+        for item in c.find_withtag('texto'):
+            c.delete(item)
+        for item in c.find_withtag('info'):
+            c.delete(item)
+        for item in c.find_withtag('pasajeros'):
+            c.delete(item)
+        for item in c.find_withtag('via_line'):
+            c.delete(item)
 
         canvas_w = int(c['width']) if 'width' in c.keys() else 640
         canvas_h = int(c['height']) if 'height' in c.keys() else 240
@@ -352,23 +387,42 @@ class Pestañas:
                 # Dibujar rectángulo de la estación
                 c.create_rectangle(x, y, x + rect_w, y + rect_h, 
                                  fill=estacion.color, outline=estacion.borde, width=2,
-                                 tags=f'estacion_{nombre}')
+                                 tags=('estacion', f'estacion_{nombre}'))
                 
                 # Nombre de la estación
                 c.create_text(x + rect_w/2, y + rect_h/2, 
                             text=estacion.nombre, font=('Arial', 10, 'bold'),
-                            tags=f'texto_{nombre}')
+                            tags=('texto', f'texto_{nombre}'))
                 
                 # Información de trenes
                 info_trenes = f"{len(estacion.trenes_esperando)}/{estacion.capacidad_de_trenes}"
-                c.create_text(x + rect_w/2, y + rect_h + 15, 
+                c.create_text(x + rect_w/2, y + rect_h + 12, 
                             text=info_trenes, font=('Arial', 8),
-                            tags=f'info_{nombre}')
+                            tags=('info', f'info_{nombre}'))
+                # Información de pasajeros en espera (debajo de la info de trenes)
+                try:
+                    if getattr(self, 'estado_sim', None) is not None:
+                        pasajeros_esperando = self.estado_sim.contar_pasajeros_en_estacion(nombre)
+                    else:
+                        pasajeros_esperando = len(getattr(estacion, 'pasajeros_esperando', []))
+                except Exception:
+                    pasajeros_esperando = len(getattr(estacion, 'pasajeros_esperando', []))
+                c.create_text(x + rect_w/2, y + rect_h + 28,
+                              text=f"Pasajeros: {pasajeros_esperando}", font=('Arial', 8),
+                              tags=('pasajeros', f'pasajeros_{nombre}'))
                 
         self.actualizar_lista_estaciones()
         # actualizar lista de trenes si existen
         try:
             self.actualizar_lista_trenes()
+        except Exception:
+            pass
+        # Si hay una estación seleccionada, actualizar su panel de información (pasajeros, trenes)
+        try:
+            if getattr(self, 'estacion_seleccionada_actual', None):
+                estacion = self.estaciones_base.get(self.estacion_seleccionada_actual)
+                if estacion:
+                    self.mostrar_informacion_estacion(estacion)
         except Exception:
             pass
     #actualizar lista de estaciones en caso de borrarse o añadir
@@ -500,6 +554,36 @@ class Pestañas:
         # Mostrar trenes como: número esperandos / capacidad si disponible
         self.label_trenes.config(text=f"Trenes: {trenes_esperando}/{capacidad_trenes}")
         self.label_poblacion.config(text=f"Población: {poblacion}")
+        # Mostrar pasajeros en espera si la estación tiene la lista correspondiente
+        try:
+            if getattr(self, 'estado_sim', None) is not None:
+                pasajeros = self.estado_sim.listar_pasajeros_en_estacion(nombre)
+            else:
+                pasajeros = getattr(estacion, 'pasajeros_esperando', [])
+        except Exception:
+            pasajeros = getattr(estacion, 'pasajeros_esperando', [])
+        pasajeros_esperando = len(pasajeros)
+        try:
+            self.label_pasajeros.config(text=f"Pasajeros en espera: {pasajeros_esperando}")
+        except Exception:
+            pass
+        # (Opcional) mostrar destinos de hasta 3 pasajeros en espera en el label de población
+        try:
+            destinos = []
+            for p in pasajeros[:3]:
+                try:
+                    destinos.append(getattr(p, 'destino', str(p)))
+                except Exception:
+                    destinos.append(str(p))
+            if destinos:
+                self.label_poblacion.config(text=f"Población: {poblacion} | Destinos: {', '.join(destinos)}")
+            else:
+                self.label_poblacion.config(text=f"Población: {poblacion}")
+        except Exception:
+            try:
+                self.label_poblacion.config(text=f"Población: {poblacion}")
+            except Exception:
+                pass
 
     def mostrar_informacion_via(self, via):
         if not via:
@@ -568,26 +652,6 @@ class Pestañas:
                 self.dibujar_estaciones()
                 return True
         return False
-
-    def dibujar_elementos(self):
-        #dibujar elementos en la interfaz
-        c = self.canvas
-        # Dibujar estaciones primero
-        try:
-            self.dibujar_estaciones()
-        except Exception:
-            pass
-
-        # Dibujar trenes (representación simple en columna izquierda)
-        try:
-            # Asegurar que la lista de trenes esté inicializada
-            if not hasattr(self, 'trenes_list'):
-                self.iniciar_trenes_base()
-            self.dibujar_trenes()
-            # Actualizar listbox de trenes
-            self.actualizar_lista_trenes()
-        except Exception:
-            pass
 
     #iniciar la simulacion con los trenes bsae (BMU-EMU)
     def iniciar_trenes_base(self):
@@ -897,6 +961,11 @@ class Pestañas:
     def reloj_tick_por_segundo(self):
         # avanzar segundos y actualizar
         self.reloj.avanzar_segundos(1)
+        # contabilizar segundos para generación periódica de pasajeros
+        try:
+            self._seconds_since_last_generation += 1
+        except Exception:
+            self._seconds_since_last_generation = 1
         self.actualizar_ui_reloj()
         # Procesar eventos programados hasta la hora actual (movimientos de trenes)
         try:
@@ -923,6 +992,29 @@ class Pestañas:
                         pass
         except Exception:
             pass
+        # Generación periódica de pasajeros: cada 60 segundos simulados
+        try:
+            if getattr(self, 'estado_sim', None) is not None:
+                if self._seconds_since_last_generation >= 60:
+                    try:
+                        # generar demanda por 1 minuto
+                        try:
+                            self.estado_sim.generar_demanda(1)
+                            print(f'[DEBUG] Pasajeros generados a las {self.reloj.obtener_hora()}')
+                        except Exception as e:
+                            print(f'[DEBUG] Error generando pasajeros: {e}')
+                        # redibujar estaciones y actualizar listas para reflejar nuevos pasajeros
+                        try:
+                            self.dibujar_estaciones()
+                            self.actualizar_lista_estaciones()
+                        except Exception:
+                            pass
+                    except Exception as e:
+                        print(f'[DEBUG] Error en generación periódica: {e}')
+                    finally:
+                        self._seconds_since_last_generation = 0
+        except Exception as e:
+            print(f'[DEBUG] Error general en generación: {e}')
         # reprogramar si está corriendo
         if self._reloj_running:
             self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)

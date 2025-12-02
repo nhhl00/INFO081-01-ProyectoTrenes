@@ -110,15 +110,18 @@ class GestorEventos:
                         except Exception:
                             pass
 
-                    # mover tren
-                    tren.estacion_actual = prox
+                    # mover tren (internamente, sin cambiar posición visual)
+                    # tren.estacion_actual = prox
+                    
+                    # Nota: No actualizamos estacion_actual para que el tren se quede visualizado
+                    # en su ubicación inicial. El sistema interno sigue registrando el estado.
 
                     # agregar tren a la estación destino (si existe y hay capacidad)
-                    if prox in estaciones:
-                        try:
-                            estaciones[prox].agregar_tren(tren)
-                        except Exception:
-                            pass
+                    # if prox in estaciones:
+                    #     try:
+                    #         estaciones[prox].agregar_tren(tren)
+                    #     except Exception:
+                    #         pass
 
                     # agenda siguiente movimiento: buscar vía entre prox y siguiente de prox
                     siguiente = tren.proximo_destino()
@@ -151,13 +154,18 @@ class GestorEventos:
                                 est_obj.trenes_esperando.remove(tren)
                         except Exception:
                             pass
-                    # mover a destino
-                    tren.estacion_actual = destino
-                    if destino in estaciones:
-                        try:
-                            estaciones[destino].agregar_tren(tren)
-                        except Exception:
-                            pass
+                    # mover a destino (internamente, sin cambiar posición visual)
+                    # tren.estacion_actual = destino
+                    
+                    # Nota: No actualizamos estacion_actual para que el tren se quede visualizado
+                    # en su ubicación inicial. El sistema interno sigue registrando el estado.
+                    
+                    # agregar tren a destino
+                    # if destino in estaciones:
+                    #     try:
+                    #         estaciones[destino].agregar_tren(tren)
+                    #     except Exception:
+                    #         pass
                 # otros tipos de eventos pueden añadirse aquí
             except Exception:
                 # no detener procesamiento por excepción en un evento

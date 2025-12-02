@@ -1,8 +1,6 @@
 import datetime as dt
 from .eventos import GestorEventos, Evento
 
-
-
 class horaActual:
     """Representa la fecha y hora de la simulación y permite avanzar el tiempo."""
     def __init__(self, hora=7, minuto=0, segundos=0, fecha=None):
@@ -74,21 +72,69 @@ class EstadoSimulacion:
             # Ruta de A hacia B
             if estacion_a not in self.rutas_para_pasajeros:
                 self.rutas_para_pasajeros[estacion_a] = []
-            self.rutas_paraa_pasajeros[estacion_a].append(estacion_b)
+            self.rutas_para_pasajeros[estacion_a].append(estacion_b)
         
-            # también permite la ruta de B hacia A
-            if via.via_rotatoria:
-                if estacion_b not in self.rutas_para_pasajeros:
-                    self.rutas_para_pasajeros[estacion_b] = []
+            # también permite la ruta de B hacia A (asegurarse de inicializar la lista)
+            if estacion_b not in self.rutas_para_pasajeros:
+                self.rutas_para_pasajeros[estacion_b] = []
             self.rutas_para_pasajeros[estacion_b].append(estacion_a)
 
 
     def generar_demanda(self,minutos:int):
-        # Usamos el mapa de rutas de pasajeros
+        # Asegurar que el mapa de rutas está construido
+        if not self.rutas_para_pasajeros:
+            self.construir_rutas_para_pasajeros()
+        
         rutas_disponibles = self.rutas_para_pasajeros
     
         for estacion in self.estaciones.values():
-            clientes = estacion.generador.generar_clientes(minutos=minutos, constructor=Pasajero,estacion_origen=estacion,rutas=rutas_disponibles,)
+            # Importar Pasajero localmente para evitar import circular entre logic <-> models
+            try:
+                from models import Pasajero
+            except Exception:
+                Pasajero = None
+            if Pasajero is None:
+                continue
+            
+            # Sincronizar el datetime del generador con la simulación
+            try:
+                estacion.generador.datetime_actual = self.hora_actual.fecha_hora
+            except Exception:
+                pass
+            
+            clientes = estacion.generador.generar_clientes(minutos=minutos, constructor=Pasajero, estacion_origen=estacion, rutas_para_pasajeros=rutas_disponibles, update=False)
+            # Añadir clientes generados a la estación (si existe API) y al estado global
+            try:
+                for c in clientes:
+                    try:
+                        estacion.recibir_pasajero(c)
+                    except Exception:
+                        pass
+                    # mantener lista global de pasajeros activos para monitoreo
+                    try:
+                        self.pasajeros_activos.append(c)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+    def contar_pasajeros_en_estacion(self, nombre_estacion):
+        try:
+            est = self.estaciones.get(nombre_estacion)
+            if not est:
+                return 0
+            return len(getattr(est, 'pasajeros_esperando', []))
+        except Exception:
+            return 0
+
+    def listar_pasajeros_en_estacion(self, nombre_estacion):
+        try:
+            est = self.estaciones.get(nombre_estacion)
+            if not est:
+                return []
+            return list(getattr(est, 'pasajeros_esperando', []))
+        except Exception:
+            return []
 
     # lista de eventos: registrar, listar y procesar
     def registrar_evento(self, evento):
