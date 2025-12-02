@@ -1,4 +1,4 @@
-from models.estacion import Estacion
+from models import Estacion
 
 class GestorEstaciones:
     def __init__(self):              # Lista donde se almacenarán todas las estaciones creadas
