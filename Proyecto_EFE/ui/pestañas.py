@@ -119,7 +119,7 @@ class Pestañas:
         #mantener índice de pestaña simulación
         self.sim_indice = 2
 
-        #Bind al cambio de pestaña para mostrar/ocultar botones (vincular cambio de pestañas a ocultmiento de botones)
+        
         self.notebook.bind('<<NotebookTabChanged>>', self.cambio_de_pestañas)
         self.cambio_de_pestañas()
     #panel para estaciones y trenes
@@ -131,7 +131,7 @@ class Pestañas:
         #lista de estaciones
         self.lista_estaciones = tk.Listbox(self.frame_info_estaciones, height=10, width=20)
         self.lista_estaciones.pack(padx=5, pady=5, fill=tk.X)
-        #bind (click en estacion) asignando la funcion
+       
         self.lista_estaciones.bind('<<ListboxSelect>>', self.estacion_seleccionada)
         
         #informacion de las estaciones
@@ -149,15 +149,15 @@ class Pestañas:
 
 
     def panel_trenes(self):
-        #Frame para trenes
+        #gestion para trenes
         self.frame_info_trenes = ttk.LabelFrame(self.frame_simulacion, text="Trenes")
         self.frame_info_trenes.pack(side=tk.LEFT, fill=tk.BOTH, padx=10, pady=10)
-        # Listbox de trenes
+        # Lista de trenes
         self.lista_trenes = tk.Listbox(self.frame_info_trenes, height=8, width=24)
         self.lista_trenes.pack(padx=5, pady=5, fill=tk.X)
         self.lista_trenes.bind('<<ListboxSelect>>', self.tren_seleccionado)
 
-        # Frame con labels para información del tren seleccionado
+        # gestion para información del tren seleccionado
         self.frame_info_tren_labels = ttk.Frame(self.frame_info_trenes)
         self.frame_info_tren_labels.pack(padx=5, pady=5, fill=tk.X)
 
@@ -183,13 +183,13 @@ class Pestañas:
                 if getattr(self, 'trenes_list', None) and len(self.trenes_list) > 0:
                     tren0 = self.trenes_list[0]
                     fecha = self.reloj.fecha_hora.date()
-                    # evento 07:02 -> Rancagua
+                    # evento 07:02  Rancagua
                     tiempo1 = dt.datetime.combine(fecha, dt.time(7, 2, 0))
                     if tiempo1 <= self.reloj.fecha_hora:
                         tiempo1 = self.reloj.fecha_hora + dt.timedelta(minutes=1)
                     ev1 = Evento(tiempo1, 'forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Rancagua'})
                     self.gestor_eventos.agendar(ev1)
-                    # evento 07:05 -> Santiago
+                    # evento 07:05  Santiago
                     tiempo2 = dt.datetime.combine(fecha, dt.time(7, 5, 0))
                     if tiempo2 <= self.reloj.fecha_hora:
                         tiempo2 = self.reloj.fecha_hora + dt.timedelta(minutes=2)
@@ -211,12 +211,12 @@ class Pestañas:
         self.frame_info_vias = ttk.LabelFrame(self.frame_simulacion, text="Vías")
         self.frame_info_vias.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=10)
 
-        # Listbox con las vías
+        # Lista con las vías
         self.lista_vias = tk.Listbox(self.frame_info_vias, height=10, width=30)
         self.lista_vias.pack(padx=5, pady=5, fill=tk.X)
         self.lista_vias.bind('<<ListboxSelect>>', self.via_seleccionada)
 
-        # Frame con labels de información de la vía seleccionada
+        # gestion de información de la vía seleccionada
         self.frame_info_via_labels = ttk.Frame(self.frame_info_vias)
         self.frame_info_via_labels.pack(padx=5, pady=5, fill=tk.X)
 
@@ -754,7 +754,7 @@ class Pestañas:
             scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
             lb.config(yscrollcommand=scrollbar.set)
 
-            # Mapear índices a event ids
+            
             idx_to_id = []
             for e in eventos:
                 try:
@@ -825,7 +825,7 @@ class Pestañas:
     #funcion para resaltar tren
     def resaltar_tren(self, nombre):
         c = self.canvas
-        # resetear outline de todos los trenes
+        # resetear bosuqejo de todos los trenes
         for tren_info in getattr(self, "_train_items", {}).values():
             rectangulo_id = tren_info[0]
             c.itemconfig(rectangulo_id, outline=BORDE_TRENES, width=2) 
