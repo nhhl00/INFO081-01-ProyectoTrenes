@@ -79,11 +79,11 @@ def main():
     if "boton_listar_eventos" in crear_botones:
         crear_botones["boton_listar_eventos"].config(command=mostrar_eventos_ui)
 
-    # Iniciar simulación automáticamente para pruebas y cerrar tras 5 segundos
-    try:
-        iniciar_simulacion()
-    except Exception:
-        pass
+    # Comentado: no iniciar simulación automáticamente, dejar que el usuario la inicie desde el botón
+    # try:
+    #     iniciar_simulacion()
+    # except Exception:
+    #     pass
     root.mainloop()
 
 
