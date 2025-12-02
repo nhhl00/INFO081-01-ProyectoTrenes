@@ -1,9 +1,6 @@
 import datetime as dt
 from .eventos import GestorEventos, Evento
-from models import Estacion
-from models import Pasajero
-from logic import GeneradorPersonas
-from models import Vias
+
 
 
 class horaActual:

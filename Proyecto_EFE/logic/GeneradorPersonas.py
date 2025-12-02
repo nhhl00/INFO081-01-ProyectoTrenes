@@ -1,9 +1,8 @@
-from logic.GeneradorClase import Generador
+from .GeneradorClase import Generador
 import datetime as dt
 import random
 from collections.abc import Callable
 from typing import Any
-from logic import EstadoDeSimulacion
 
 class GeneradorPersonas(Generador):
     def generar_clientes(
