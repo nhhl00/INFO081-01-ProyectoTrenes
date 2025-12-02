@@ -64,13 +64,11 @@ class EstadoSimulacion:
         self.pasajeros_activos = []
         self.gestor_eventos = GestorEventos()
 
-    # API de eventos: registrar, listar y procesar
+    # lista de eventos: registrar, listar y procesar
     def registrar_evento(self, evento):
-        """Agrega un evento. `evento` puede ser instancia de Evento o dict serializable."""
         if isinstance(evento, Evento):
             self.gestor_eventos.agendar(evento)
             return evento
-        # aceptar dict con campos 'tiempo' (iso), 'tipo', 'datos'
         try:
             tiempo_iso = evento.get('tiempo')
             tiempo = dt.datetime.fromisoformat(tiempo_iso)
@@ -84,7 +82,6 @@ class EstadoSimulacion:
             return None
 
     def listar_eventos(self):
-        """Devuelve la lista de eventos como diccionarios serializables."""
         resultado = []
         for e in self.gestor_eventos.listar_eventos():
             resultado.append({
@@ -96,7 +93,6 @@ class EstadoSimulacion:
         return resultado
 
     def cargar_eventos_desde_lista(self, eventos_lista):
-        """Carga eventos desde una lista de diccionarios (ej. desde JSON)."""
         for ev in eventos_lista or []:
             try:
                 tiempo = dt.datetime.fromisoformat(ev.get('tiempo'))
@@ -108,7 +104,6 @@ class EstadoSimulacion:
                 pass
 
     def procesar_hasta(self):
-        """Procesa eventos hasta la hora actual del estado."""
         return self.gestor_eventos.procesar_hasta(self.hora_actual.fecha_hora, self.estaciones, self.vias, self.trenes)
 
     # propiedad para compatibilidad con el sistema de guardado
