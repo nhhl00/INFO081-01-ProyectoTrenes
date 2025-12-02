@@ -47,65 +47,16 @@ class Pestañas:
 
         #llamar a panel de estaciones
         self.panel_estaciones()
-        #llamar a panel de trenes
-        self.panel_trenes()
         #llamar a las estaciones base
         self.iniciar_estaciones_base()
         #llamar a los trenes base
         self.iniciar_trenes_base()
+        #llamar a panel de trenes
+        self.panel_trenes()
         #llamar a panel vias
         self.panel_vias()
         #llamar a las vias base
         self.iniciar_vias_base()
-        # Gestor de eventos: controla movimientos programados de trenes
-        try:
-            self.gestor_eventos = GestorEventos()
-            # Agendar movimientos iniciales para los trenes que tengan destino
-            for tren in getattr(self, 'trenes_list', []):
-                try:
-                    origen = getattr(tren, 'estacion_actual', None)
-                    prox = tren.proximo_destino()
-                    if origen and prox:
-                        via = self.gestor_eventos._encontrar_via(self.vias_base, origen, prox)
-                        if via:
-                            # Para pruebas rápidas fijamos el primer evento a las 07:02
-                            try:
-                                fecha = self.reloj.fecha_hora.date()
-                                nuevo_tiempo = dt.datetime.combine(fecha, dt.time(7, 2, 0))
-                                # si ya pasó esa hora hoy, dejarlo 1 minuto adelante
-                                if nuevo_tiempo <= self.reloj.fecha_hora:
-                                    nuevo_tiempo = self.reloj.fecha_hora + dt.timedelta(minutes=1)
-                            except Exception:
-                                # fallback al cálculo por defecto si algo falla
-                                velocidad = getattr(tren, 'velocidad_constante', 60) or 60
-                                horas = via.longitud / velocidad
-                                segundos = int(horas * 3600)
-                                if segundos <= 0:
-                                    segundos = 1
-                                nuevo_tiempo = self.reloj.fecha_hora + dt.timedelta(seconds=segundos)
-                            ev = Evento(nuevo_tiempo, 'mover_tren', {'id_tren': tren.id_tren})
-                            self.gestor_eventos.agendar(ev)
-                except Exception:
-                    pass
-                # Agendar evento de retorno a Santiago a las 07:05 para el primer tren (prueba)
-                try:
-                    if self.trenes_list:
-                        tren0 = self.trenes_list[0]
-                        fecha = self.reloj.fecha_hora.date()
-                        retorno_tiempo = dt.datetime.combine(fecha, dt.time(7, 5, 0))
-                        if retorno_tiempo <= self.reloj.fecha_hora:
-                            retorno_tiempo = self.reloj.fecha_hora + dt.timedelta(minutes=1)
-                        ev2 = Evento(retorno_tiempo, 'forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Santiago'})
-                        self.gestor_eventos.agendar(ev2)
-                        # Si por alguna razón hay duplicados, eliminar el último para que quede uno solo
-                        try:
-                            self.gestor_eventos.eliminar_ultimo_duplicado('forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Santiago'})
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
-        except Exception:
-            self.gestor_eventos = None
         #llamar a dibujar elementos paara inicializar datos y dibujar elementos estáticos
         self.dibujar_elementos()
 
@@ -200,6 +151,19 @@ class Pestañas:
                         self.gestor_eventos.eliminar_ultimo_duplicado('forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Rancagua'})
                         self.gestor_eventos.eliminar_ultimo_duplicado('forzar_mover_tren', {'id_tren': tren0.id_tren, 'destino': 'Santiago'})
                     except Exception:
+                        pass
+                    # evento para tren EMU (T02) que viaje a Chillán a las 07:03
+                    try:
+                        if len(self.trenes_list) > 1:
+                            tren1 = self.trenes_list[1]
+                            tiempo_emu = dt.datetime.combine(fecha, dt.time(7, 3, 0))
+                            if tiempo_emu <= self.reloj.fecha_hora:
+                                tiempo_emu = self.reloj.fecha_hora + dt.timedelta(minutes=3)
+                            ev_emu = Evento(tiempo_emu, 'forzar_mover_tren', {'id_tren': tren1.id_tren, 'destino': 'Chillán'})
+                            self.gestor_eventos.agendar(ev_emu)
+                            print(f"[DEBUG] Evento EMU agendado: tren={tren1.id_tren}, destino=Chillán, tiempo={tiempo_emu}")
+                    except Exception as e:
+                        print(f"[DEBUG] Error agendando evento EMU: {e}")
                         pass
             except Exception:
                 pass
