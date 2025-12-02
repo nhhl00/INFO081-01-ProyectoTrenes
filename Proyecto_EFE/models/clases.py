@@ -1,4 +1,6 @@
 from config import COLOR_ESTACIONES, BORDE_ESTACIONES
+from logic import GeneradorPersonas
+import datetime as dt
 
 class Estacion:
     def __init__(self, nombre, id_estacion, poblacion, capacidad_de_trenes): #parametros de la estacion
@@ -12,6 +14,7 @@ class Estacion:
         #colores propios de las estaciones
         self.color = COLOR_ESTACIONES
         self.borde = BORDE_ESTACIONES
+        self.generador = GeneradorPersonas(poblacion=self.poblacion)
 
     def recibir_pasajero(self, pasajero):
         self.pasajeros_esperando.append(pasajero)
@@ -26,6 +29,8 @@ class Estacion:
         while self.pasajeros_esperando and len(tren.pasajeros) < tren.capacidad:
             pasajero = self.pasajeros_esperando.pop(0)
             tren.abordar_pasajero(pasajero)
+    
+
 
 class Vias:
     def __init__(self, id_via, longitud, conexion_estacion_a, conexion_estacion_b, via_rotatoria, tren_en_via):
@@ -134,10 +139,12 @@ class Tren:
     
 
 class Pasajero:
-    def __init__(self, id_pasajero, origen, destino):
+    def __init__(self, id_pasajero, origen:str=None, destino:str=None, tiempo_de_creacion: dt.datetime=None):
         self.id_pasajero = id_pasajero
+        self.tiempo_de_creacion = tiempo_de_creacion
         self.origen = origen
         self.destino = destino
+        self.estado = "esperando"
 
     def __str__(self):
         return f"Pasajero {self.id_pasajero} (de {self.origen} a {self.destino})"
