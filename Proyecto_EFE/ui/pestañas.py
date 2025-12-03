@@ -5,6 +5,7 @@ from config import COLOR_TRENES, BORDE_TRENES
 from models import Estacion, Tren, Vias
 from logic import horaActual
 from logic.EstadoDeSimulacion import EstadoSimulacion
+from logic.SistemaDeGuardado import SistemaGuardado
 import datetime as dt
 from logic.eventos import GestorEventos, Evento
 
@@ -21,6 +22,7 @@ class Pestañas:
         self.frame_botones = frame_botones
         self.sistema = sistema_ferroviario
 
+        self.sistema_guardado = SistemaGuardado(directorio="saves")
 
         # Crear Notebook
         self.notebook = ttk.Notebook(parent)
@@ -872,30 +874,126 @@ class Pestañas:
                 # Guardar para poder borrar luego
                 self._route_items.append(line)
 
+    def guardar_simulacion_actual(self):
+        try:
+            if self.estado_sim is None:
+                messagebox.showwarning("Guardar", "No hay simulación en curso para guardar.")
+                return
+            
+            exito, ruta = self.sistema_guardado.guardar_simulacion(self.estado_sim)
+            
+            if exito:
+                messagebox.showinfo("Guardar", f"Simulación guardada exitosamente.\n\nUbicación: {ruta}")
+            else:
+                messagebox.showerror("Guardar", "Error al guardar la simulación. Consulte la consola para detalles.")
+        except Exception as e:
+            messagebox.showerror("Guardar", f"Error al guardar la simulación: {e}")
+            print(f"Error en guardar_simulacion_actual: {e}")
+
+    def cargar_simulacion_guardada(self):
+        try:
+            guardados = self.sistema_guardado.listar_guardados()
+            
+            if not guardados:
+                messagebox.showinfo("Cargar", "No hay simulaciones guardadas disponibles.")
+                return
+            
+            top = tk.Toplevel(self.parent)
+            top.title("Cargar simulación")
+            top.geometry('500x400')
+            
+            tk.Label(top, text="Selecciona una simulación para cargar:", font=("Arial", 10)).pack(pady=10)
+            
+            frame_list = ttk.Frame(top)
+            frame_list.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            
+            listbox = tk.Listbox(frame_list, selectmode=tk.SINGLE)
+            listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            
+            scrollbar = ttk.Scrollbar(frame_list, orient=tk.VERTICAL, command=listbox.yview)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            listbox.config(yscrollcommand=scrollbar.set)
+            
+            mapeo_guardados = []
+            
+            for fecha in sorted(guardados.keys(), reverse=True):
+                for guardado in sorted(guardados[fecha], key=lambda x: x['nombre'], reverse=True):
+                    nombre_mostrado = f"{fecha} - {guardado['nombre'].replace('guardado_', '').replace('.json', '')}"
+                    listbox.insert(tk.END, nombre_mostrado)
+                    mapeo_guardados.append(guardado['ruta'])
+            
+            frame_botones = ttk.Frame(top)
+            frame_botones.pack(fill=tk.X, padx=10, pady=10)
+            
+            def cargar_seleccionado():
+                seleccion = listbox.curselection()
+                if not seleccion:
+                    messagebox.showwarning("Cargar", "Selecciona una simulación primero.")
+                    return
+                
+                indice = seleccion[0]
+                ruta = mapeo_guardados[indice]
+                
+                nuevo_estado = self.sistema_guardado.cargar_simulacion(ruta)
+                
+                if nuevo_estado is None:
+                    messagebox.showerror("Cargar", "Error al cargar la simulación.")
+                    return
+                
+                self.estado_sim = nuevo_estado
+                self.reloj = self.estado_sim.hora_actual
+                
+                try:
+                    self.dibujar_elementos()
+                    self.actualizar_ui_reloj()
+                    messagebox.showinfo("Cargar", "Simulación cargada exitosamente.")
+                    top.destroy()
+                except Exception as e:
+                    messagebox.showerror("Cargar", f"Error al redibujar la simulación: {e}")
+            
+            def cancelar():
+                top.destroy()
+            
+            btn_cargar = ttk.Button(frame_botones, text="Cargar", command=cargar_seleccionado)
+            btn_cargar.pack(side=tk.LEFT, padx=5)
+            
+            btn_cancelar = ttk.Button(frame_botones, text="Cancelar", command=cancelar)
+            btn_cancelar.pack(side=tk.RIGHT, padx=5)
+            
+        except Exception as e:
+            messagebox.showerror("Cargar", f"Error al cargar simulaciones: {e}")
+            print(f"Error en cargar_simulacion_guardada: {e}")
+
     #funcion para crear el ui del reloj 
     def crear_ui_reloj(self):
         frame_reloj = ttk.Frame(self.frame_simulacion)
         frame_reloj.pack(pady=10)
 
-        # Label principal del reloj
         self.label_reloj = ttk.Label(frame_reloj, text="", font=('Arial', 8))
         self.label_reloj.pack()
 
-        # Botón para ver la cola de eventos (está dentro de la pestaña Simulación)
         boton_eventos_local = ttk.Button(frame_reloj, text="Ver eventos", command=self.mostrar_eventos_dialog)
         boton_eventos_local.pack(padx=4, pady=2)
-        # Opción: detener simulación cuando no queden eventos
+        
+        frame_botones_guardado = ttk.Frame(self.frame_simulacion)
+        frame_botones_guardado.pack(pady=10, expand=False)
+        
+        boton_guardar_local = ttk.Button(frame_botones_guardado, text="Guardar simulación", command=self.guardar_simulacion_actual)
+        boton_guardar_local.pack(padx=4, pady=2, side=tk.LEFT)
+        
+        boton_cargar_local = ttk.Button(frame_botones_guardado, text="Cargar simulación", command=self.cargar_simulacion_guardada)
+        boton_cargar_local.pack(padx=4, pady=2, side=tk.LEFT)
+        
         try:
             self._stop_when_empty_var = tk.BooleanVar(value=True)
             chk = ttk.Checkbutton(frame_reloj, text='Detener al terminar eventos', variable=self._stop_when_empty_var)
             chk.pack(padx=4, pady=2)
         except Exception:
             self._stop_when_empty_var = tk.BooleanVar(value=True)
-        # Mostrar la hora inicial
+        
         self.actualizar_ui_reloj()
     #funcion para actualizar la ui del reloj junto a los ticks
     def actualizar_ui_reloj(self):
-        #acuatliza la ui del rejol continumamente
         try:
             hora = self.reloj.obtener_hora()
         except Exception:

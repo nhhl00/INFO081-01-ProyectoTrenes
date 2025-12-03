@@ -20,11 +20,10 @@ def main():
     #ui(ésta{as}):
     crear_botones = fn_botones(root)
     frame_botones = crear_botones["frame_para_botones"]
-    frame_botones.pack(side=tk.BOTTOM, pady=10, padx=10)
+    frame_botones.pack(side=tk.TOP, pady=10, padx=10, expand=True)
 
     #ui(botones):
     crear_frames = Pestañas(root,frame_botones)
-    # obtener la instancia de Pestañas (crear_frames puede ser el objeto Pestañas)
     if isinstance(crear_frames, Pestañas):
         pestanas_instancia = crear_frames
     else:
@@ -64,25 +63,16 @@ def main():
     # comando para mostrar la cola de eventos en la UI
     def mostrar_eventos_ui():
         try:
-            # debug: confirmar que el handler se ejecuta
-            print('[DEBUG] mostrar_eventos_ui llamado')
-            messagebox.showinfo('Debug', 'Ver eventos: handler llamado')
             if pestanas_instancia and hasattr(pestanas_instancia, 'mostrar_eventos_dialog'):
                 pestanas_instancia.mostrar_eventos_dialog()
             else:
                 messagebox.showinfo("Eventos", "No hay gestor de eventos disponible.")
         except Exception as e:
-            print(f'[ERROR] mostrar_eventos_ui: {e}')
             messagebox.showerror("Error", f"No se pudo mostrar eventos: {e}")
 
     if "boton_listar_eventos" in crear_botones:
         crear_botones["boton_listar_eventos"].config(command=mostrar_eventos_ui)
 
-    # Comentado: no iniciar simulación automáticamente, dejar que el usuario la inicie desde el botón
-    # try:
-    #     iniciar_simulacion()
-    # except Exception:
-    #     pass
     root.mainloop()
 
 
