@@ -59,7 +59,6 @@ def main():
                 messagebox.showerror("Error!","Pestaña no existe")
             except Exception:
                 messagebox.showerror("Error!", "Hubo un error inesperado")
-    
     # Asignar comando al boton de iniciar simulación
     crear_botones["boton_iniciar_simulacion"].config(command=iniciar_simulacion)
     # comando para mostrar la cola de eventos en la UI

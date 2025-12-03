@@ -56,24 +56,20 @@ class Pestañas:
         self.iniciar_trenes_base()
 
         # Crear EstadoSimulacion y sincronizar estructuras compartidas
-        try:
-            self.estado_sim = EstadoSimulacion()
-            # usar el mismo reloj
-            self.estado_sim.hora_actual = self.reloj
-            # vincular referencias (usar objetos existentes en UI)
-            self.estado_sim.estaciones = self.estaciones_base
-            self.estado_sim.vias = self.vias_base
-            self.estado_sim.trenes = self.trenes_list
-            # construir mapa de rutas para la generación de pasajeros
-            try:
-                self.estado_sim.construir_rutas_para_pasajeros()
-            except Exception:
-                pass
-            # exponer el gestor de eventos para la UI
-            self.gestor_eventos = self.estado_sim.gestor_eventos
-        except Exception:
-            self.estado_sim = None
-            self.gestor_eventos = None
+        
+        self.estado_sim = EstadoSimulacion()
+        # usar el mismo reloj
+        self.estado_sim.hora_actual = self.reloj
+        # vincular referencias (usar objetos existentes en UI)
+        self.estado_sim.estaciones = self.estaciones_base
+        self.estado_sim.vias = self.vias_base
+        self.estado_sim.trenes = self.trenes_list
+        # construir mapa de rutas para la generación de pasajeros
+        self.estado_sim.construir_rutas_para_pasajeros()
+        
+        # exponer el gestor de eventos para la UI
+        self.gestor_eventos = self.estado_sim.gestor_eventos
+        
 
         # paneles que dependen de las listas previas
         self.panel_trenes()
@@ -81,8 +77,6 @@ class Pestañas:
 
         # dibujar elementos paara inicializar datos y dibujar elementos estáticos
         self.dibujar_elementos()
-
-        # movement controller removed — no MovimientoDeTrenes integration
 
         # Añadir pestañas
         self.notebook.add(self.frame_inicio, text="Inicio")
@@ -110,7 +104,7 @@ class Pestañas:
         #informacion de las estaciones
         self.frame_info_para_labels = ttk.Frame(self.frame_info_estaciones)
         self.frame_info_para_labels.pack(padx=5, pady=5, fill=tk.X)
-        
+        #informacion principal de la estacion
         self.label_nombre = ttk.Label(self.frame_info_para_labels, text="Estacion: ")
         self.label_nombre.pack(anchor=tk.W)
         self.label_estado = ttk.Label(self.frame_info_para_labels, text="Estado: ")
@@ -123,7 +117,7 @@ class Pestañas:
         self.label_pasajeros = ttk.Label(self.frame_info_para_labels, text="Pasajeros en espera: 0")
         self.label_pasajeros.pack(anchor=tk.W)
 
-
+    #panel para trenes(labels)
     def panel_trenes(self):
         #gestion para trenes
         self.frame_info_trenes = ttk.LabelFrame(self.frame_simulacion, text="Trenes")
@@ -187,15 +181,15 @@ class Pestañas:
                                 tiempo_emu = self.reloj.fecha_hora + dt.timedelta(minutes=3)
                             ev_emu = Evento(tiempo_emu, 'forzar_mover_tren', {'id_tren': tren1.id_tren, 'destino': 'Chillán'})
                             self.gestor_eventos.agendar(ev_emu)
-                            print(f"[DEBUG] Evento EMU agendado: tren={tren1.id_tren}, destino=Chillán, tiempo={tiempo_emu}")
+                            print(f"Evento EMU agendado: tren={tren1.id_tren}, destino=Chillán, tiempo={tiempo_emu}")
                     except Exception as e:
-                        print(f"[DEBUG] Error agendando evento EMU: {e}")
+                        print(f"Error agendando evento EMU: {e}")
                         pass
             except Exception:
                 pass
         except Exception:
             self.gestor_eventos = None
-
+    #panel para vias(labels)
     def panel_vias(self):
         # Panel para mostrar vías y sus detalles
         self.frame_info_vias = ttk.LabelFrame(self.frame_simulacion, text="Vías")
@@ -275,16 +269,16 @@ class Pestañas:
 
                 if via.estado == "ocupada":
                     color_via = "#ff0000"  # Rojo para vías ocupadas
-                    grosor_via = 4
+                    grosor_via = 2
                 else:
-                    color_via = "#666666"  # Gris para vías normales
+                    color_via = "#666666"  # Gris para vías sin seleccionar
                     grosor_via = 2
 
                 # Añadir tag común 'via_line' para poder limpiar y gestionar todas las vías
                 linea = c.create_line(x1_centro, y1_centro, x2_centro, y2_centro, 
                                     fill=color_via, width=grosor_via, 
                                     tags=(f"via_line", f"via_{via.id_via}"))
-                # bind onclick para la vía
+                # bind en click para la vía
                 try:
                     c.tag_bind(f"via_{via.id_via}", '<Button-1>', self.via_seleccionada)
                 except Exception:
@@ -293,7 +287,7 @@ class Pestañas:
                 self.vias_mostradas.append(via.id_via)
 
     def limpiar_vias(self):
-        #borrr vias
+        #borrat vias
         c = self.canvas
         # Eliminar todas las líneas de vías y sus etiquetas
         # Eliminar todas las líneas de vías usando el tag común 'via_line'
@@ -322,7 +316,7 @@ class Pestañas:
                 x2_centro = x2 + self._rect_w / 2
                 y2_centro = y2 + self._rect_h / 2
                 
-                # Color más tenue para vías no seleccionadas
+                # Color gris para vías no seleccionadas
                 if via.estado == "ocupada":
                     color_via = "#ff6666"  # Rojo para ocupadas
                 else:
@@ -340,30 +334,30 @@ class Pestañas:
 
     #funcion para dibujar estaciones en las coordenadas
     def dibujar_estaciones(self):
-        c = self.canvas
+        cnv = self.canvas
         # Borrar solo estaciones, vías y etiquetas de pasajeros (preservar trenes)
-        for item in c.find_withtag('estacion'):
-            c.delete(item)
-        for item in c.find_withtag('texto'):
-            c.delete(item)
-        for item in c.find_withtag('info'):
-            c.delete(item)
-        for item in c.find_withtag('pasajeros'):
-            c.delete(item)
-        for item in c.find_withtag('via_line'):
-            c.delete(item)
-
-        canvas_w = int(c['width']) if 'width' in c.keys() else 640
-        canvas_h = int(c['height']) if 'height' in c.keys() else 240
+        for item in cnv.find_withtag('estacion'):
+            cnv.delete(item)
+        for item in cnv.find_withtag('texto'):
+            cnv.delete(item)
+        for item in cnv.find_withtag('info'):
+            cnv.delete(item)
+        for item in cnv.find_withtag('pasajeros'):
+            cnv.delete(item)
+        for item in cnv.find_withtag('via_line'):
+            cnv.delete(item)
+        #Area de dibujo
+        canvas_w = int(cnv['width']) 
+        canvas_h = int(cnv['height']) 
         rect_w = 100
         rect_h = 40
-
+        #coordenadas
         centro_x = (canvas_w - rect_w) / 2
         centro_y = (canvas_h - rect_h) / 2
-
+        #espacios entre estaciones
         espacio_vertical = 40
         espacio_horizontal = 50
-
+        # Asignar coordenadas a cada estacion
         posiciones = {
             'Santiago': (centro_x, centro_y),
             'Rancagua': (centro_x, centro_y - rect_h - espacio_vertical),
@@ -385,21 +379,21 @@ class Pestañas:
                 estacion = self.estaciones_base[nombre]
                 
                 # Dibujar rectángulo de la estación
-                c.create_rectangle(x, y, x + rect_w, y + rect_h, 
+                cnv.create_rectangle(x, y, x + rect_w, y + rect_h, 
                                  fill=estacion.color, outline=estacion.borde, width=2,
                                  tags=('estacion', f'estacion_{nombre}'))
                 
-                # Nombre de la estación
-                c.create_text(x + rect_w/2, y + rect_h/2, 
+                #nombre de la estación
+                cnv.create_text(x + rect_w/2, y + rect_h/2, 
                             text=estacion.nombre, font=('Arial', 10, 'bold'),
                             tags=('texto', f'texto_{nombre}'))
                 
-                # Información de trenes
+                #información de trenes
                 info_trenes = f"{len(estacion.trenes_esperando)}/{estacion.capacidad_de_trenes}"
-                c.create_text(x + rect_w/2, y + rect_h + 12, 
+                cnv.create_text(x + rect_w/2, y + rect_h + 12, 
                             text=info_trenes, font=('Arial', 8),
                             tags=('info', f'info_{nombre}'))
-                # Información de pasajeros en espera (debajo de la info de trenes)
+                #información de pasajeros en espera (debajo de la info de trenes)
                 try:
                     if getattr(self, 'estado_sim', None) is not None:
                         pasajeros_esperando = self.estado_sim.contar_pasajeros_en_estacion(nombre)
@@ -407,24 +401,17 @@ class Pestañas:
                         pasajeros_esperando = len(getattr(estacion, 'pasajeros_esperando', []))
                 except Exception:
                     pasajeros_esperando = len(getattr(estacion, 'pasajeros_esperando', []))
-                c.create_text(x + rect_w/2, y + rect_h + 28,
+                cnv.create_text(x + rect_w/2, y + rect_h + 28,
                               text=f"Pasajeros: {pasajeros_esperando}", font=('Arial', 8),
                               tags=('pasajeros', f'pasajeros_{nombre}'))
-                
+        # actualizar lista de trenes 
         self.actualizar_lista_estaciones()
-        # actualizar lista de trenes si existen
-        try:
-            self.actualizar_lista_trenes()
-        except Exception:
-            pass
-        # Si hay una estación seleccionada, actualizar su panel de información (pasajeros, trenes)
-        try:
-            if getattr(self, 'estacion_seleccionada_actual', None):
-                estacion = self.estaciones_base.get(self.estacion_seleccionada_actual)
-                if estacion:
-                    self.mostrar_informacion_estacion(estacion)
-        except Exception:
-            pass
+        # Si hay una estación seleccionada actualizar su panel de información (pasajeros, trenes)
+        if getattr(self, 'estacion_seleccionada_actual', None):
+            estacion = self.estaciones_base.get(self.estacion_seleccionada_actual)
+            if estacion:
+                self.mostrar_informacion_estacion(estacion)
+        
     #actualizar lista de estaciones en caso de borrarse o añadir
     def actualizar_lista_estaciones(self):
         self.lista_estaciones.delete(0, tk.END)
@@ -439,7 +426,7 @@ class Pestañas:
             self.estacion_seleccionada_actual = nombre_estacion
             estacion = self.estaciones_base[nombre_estacion]
             self.mostrar_informacion_estacion(estacion)
-            self.resaltar_estacion(nombre_estacion)
+            self.resaltar_estacion()
             # mostrar solo las vías conectadas a esta estación
             self.dibujar_vias_por_estacion(nombre_estacion)
             # Actualizar lista de vías en el panel por estacion
@@ -478,8 +465,6 @@ class Pestañas:
 
     def dibujar_elementos(self):
         #dibujar todos los elementos de la interfaz
-        c = self.canvas
-        
         # Dibujar estaciones primero
         try:
             self.dibujar_estaciones()
@@ -541,14 +526,14 @@ class Pestañas:
             return
         except Exception:
             pass
-
+    #funcion para que se vea la informacion de cada estacion
     def mostrar_informacion_estacion(self, estacion):
         nombre = getattr(estacion, 'nombre', 'Desconocida')
         estado = getattr(estacion, 'estado', 'Desconocido')
         trenes_esperando = len(getattr(estacion, 'trenes_esperando', []))
         capacidad_trenes = getattr(estacion, 'capacidad_de_trenes', 'N/A')
         poblacion = getattr(estacion, 'poblacion', 'N/D')
-
+        #labels
         self.label_nombre.config(text=f"Estación: {nombre}")
         self.label_estado.config(text=f"Estado: {estado}")
         # Mostrar trenes como: número esperandos / capacidad si disponible
@@ -588,45 +573,37 @@ class Pestañas:
     def mostrar_informacion_via(self, via):
         if not via:
             return
-        try:
-            self.label_via_id.config(text=f"Vía: {via.id_via}")
-            self.label_via_estaciones.config(text=f"Conecta: {via.conexion_estacion_a} - {via.conexion_estacion_b}")
-            self.label_via_longitud.config(text=f"Longitud: {via.longitud} km")
-            estado = "Libre" if getattr(via, 'estado', 'desocupada') == 'desocupada' else "Ocupada"
-            self.label_via_estado.config(text=f"Estado: {estado}")
-            tipo = "Rotatoria" if getattr(via, 'via_rotatoria', False) else "Normal"
-            self.label_via_tipo.config(text=f"Tipo: {tipo}")
-        except Exception:
-            pass
-
+        self.label_via_id.config(text=f"Vía: {via.id_via}")
+        self.label_via_estaciones.config(text=f"Conecta: {via.conexion_estacion_a} - {via.conexion_estacion_b}")
+        self.label_via_longitud.config(text=f"Longitud: {via.longitud} km")
+        estado = "Libre" if getattr(via, 'estado', 'desocupada') == 'desocupada' else "Ocupada"
+        self.label_via_estado.config(text=f"Estado: {estado}")
+        tipo = "Rotatoria" if getattr(via, 'via_rotatoria', False) else "Normal"
+        self.label_via_tipo.config(text=f"Tipo: {tipo}")
+    #funcion para resaltar las vias
     def resaltar_via(self, via_id):
         c = self.canvas
         # resetear todas las vías a su color base
-        try:
-            for item in c.find_withtag('via_line'):
-                # Encontrar a qué via pertenece por tags
-                tags = c.gettags(item)
-                cur_via_id = None
-                for t in tags:
-                    if isinstance(t, str) and t.startswith('via_') and t != 'via_line':
-                        cur_via_id = t.split('_', 1)[1]
-                        break
-                # Obterner estado del objeto via para pintar acorde
-                via_obj = next((v for v in getattr(self, 'vias_base', []) if v.id_via == cur_via_id), None)
-                if via_obj and via_obj.estado == 'ocupada':
-                    c.itemconfig(item, fill='#ff6666', width=4)
-                else:
-                    c.itemconfig(item, fill='#cccccc', width=2)
-        except Exception:
-            pass
+        for item in c.find_withtag('via_line'):
+            # Encontrar a qué via pertenece por tags
+            tags = c.gettags(item)
+            cur_via_id = None
+            for t in tags:
+                if isinstance(t, str) and t.startswith('via_') and t != 'via_line':
+                    cur_via_id = t.split('_', 1)[1]
+                    break
+            # Obterner estado del objeto via para pintar acorde
+            via_obj = next((v for v in getattr(self, 'vias_base', []) if v.id_via == cur_via_id), None)
+            if via_obj and via_obj.estado == 'ocupada':
+                c.itemconfig(item, fill='#ff6666', width=2)
+            else:
+                c.itemconfig(item, fill='#cccccc', width=2)
         # Ahora resaltar la seleccionada en verde oscuro
-        try:
-            if via_id is None:
-                return
-            for item in c.find_withtag(f'via_{via_id}'):
-                c.itemconfig(item, fill='#00aa00', width=4)
-        except Exception:
-            pass
+        
+        if via_id is None:
+            return
+        for item in c.find_withtag(f'via_{via_id}'):
+            c.itemconfig(item, fill="#00aa00", width=4)
 
     #al cambiar pestañas se ocultn los botones
     def cambio_de_pestañas(self, event=None):
@@ -639,11 +616,9 @@ class Pestañas:
     # Métodos para compatibilidad
     def select(self, index):
         return self.notebook.select(index)
-
     def get_notebook(self):
         return self.notebook
     
-
     #agregar trenes a las estaciones
     def agregar_tren_a_estacion(self, nombre_estacion, tren):   
         if nombre_estacion in self.estaciones_base:
@@ -665,13 +640,11 @@ class Pestañas:
     # actualizar lista de trenes en caso de borrar o añadir
     def actualizar_lista_trenes(self):
         # Actualiza la listbox de trenes en el panel derecho
-        try:
-            self.lista_trenes.delete(0, tk.END)
-            for tren in self.trenes_list:
-                nombre = getattr(tren, 'nombre_tren', str(tren))
-                self.lista_trenes.insert(tk.END, nombre)
-        except Exception:
-            pass
+        self.lista_trenes.delete(0, tk.END)
+        for tren in self.trenes_list:
+            nombre = getattr(tren, 'nombre_tren', str(tren))
+            self.lista_trenes.insert(tk.END, nombre)
+        
     #dibujar los trenes en sus coordenadas
     def dibujar_trenes(self):
         c = self.canvas
@@ -684,10 +657,7 @@ class Pestañas:
         # limpiar items previos de tren por si acaso
         if hasattr(self, '_train_items'):
             for item in self.train_items.values():
-                try:
-                    c.delete(item)
-                except Exception:
-                    pass
+                c.delete(item)
         self.train_items = {}
         for tren in self.trenes_list:
             nombre = getattr(tren, 'nombre_tren', 'Tren')
@@ -705,6 +675,7 @@ class Pestañas:
                 txt = c.create_text(x + ancho / 2, y + alto / 2, text=nombre, font=('Arial', 9, 'bold'), tags=(tag,))
             self.train_items[nombre] = (rect, txt)
             y += alto + espacio
+
     #al hacer click mostrar laa informcaion del tren resaltarlo
     def tren_seleccionado(self, event):
         seleccionado = self.lista_trenes.curselection()
@@ -736,19 +707,14 @@ class Pestañas:
     def mostrar_eventos_dialog(self):
         """Muestra la cola de eventos en un diálogo modal para depuración."""
         try:
-            print('[DEBUG] mostrar_eventos_dialog llamado')
             eventos = []
             # preferir el gestor de eventos de la propia pestaña
             if getattr(self, 'gestor_eventos', None) is not None:
-                print('[DEBUG] usando self.gestor_eventos')
+                print('usando self.gestor_eventos')
                 eventos = self.gestor_eventos.listar_eventos()
             # si existe un sistema externo con estado, usarlo
             elif getattr(self, 'sistema', None) is not None and hasattr(self.sistema, 'gestor_eventos'):
-                print('[DEBUG] usando sistema.gestor_eventos')
                 eventos = self.sistema.gestor_eventos.listar_eventos()
-
-            print(f'[DEBUG] eventos obtenidos: {type(eventos)} len={len(eventos) if hasattr(eventos, "__len__") else "?"}')
-
             if not eventos:
                 messagebox.showinfo("Eventos", "No hay eventos programados.")
                 return
@@ -763,10 +729,9 @@ class Pestañas:
                 except Exception:
                     eventos = list(eventos)
             try:
-                iterator = iter(eventos)
+                iterador = iter(eventos)
             except TypeError:
                 eventos = [eventos]
-
             # Crear ventana y listbox
             top = tk.Toplevel(self.parent)
             top.title("Cola de eventos")
@@ -850,7 +815,7 @@ class Pestañas:
             except Exception:
                 pass
 
-    #funcion para resaltar tren
+    #funcion para resaltar tren y sus rutas
     def resaltar_tren(self, nombre):
         c = self.canvas
         # resetear bosuqejo de todos los trenes
@@ -860,20 +825,10 @@ class Pestañas:
         # resaltar el seleccionado
         if nombre in getattr(self, '_train_items', {}):
             rectangulo_id = self.train_items[nombre][0]
-            c.itemconfig(rectangulo_id, outline='#00aa00', width=2)
-
-    #funcion para resaltar estaciones al seleccionarla
-    def resaltar_estacion(self, nombre):
-        #resaltaa estacion seleccionada
-        c = self.canvas
-        #resetear resaltamiento
-        for n, est in self.estaciones_base.items():
-            tag_estacion = f'estacion_{n}'
-            c.itemconfig(tag_estacion, outline=est.borde, width=2)
-        #resaltar en rojo
-        if nombre in self.estaciones_base:
-            tag_sel = f'estacion_{nombre}'
-            c.itemconfig(tag_sel, outline='#ff0000', width=2)
+    
+        
+    #funcion para resaltar estaciones al seleccionarla con sus vias
+    def resaltar_estacion(self):
         # Limpiar cualquier resaltado de rutas previas cuando se selecciona una estación
         self.limpiar_resaltado_ruta()
 
@@ -882,10 +837,7 @@ class Pestañas:
         # Borrar líneas de rutas dibujadas previamente
         if hasattr(self, '_route_items') and self._route_items:
             for item in list(self._route_items):
-                try:
-                    c.delete(item)
-                except Exception:
-                    pass
+                c.delete(item)
             self._route_items = []
         # Resetear outline de todas las estaciones a su color original
         for nombre, est in getattr(self, 'estaciones_base', {}).items():
@@ -903,23 +855,20 @@ class Pestañas:
         ruta = getattr(tren, 'ruta', None)
         if not ruta:
             return
-        c = self.canvas
+        cnv = self.canvas
         puntos = []
         for nombre in ruta:
             if nombre in getattr(self, '_posiciones', {}):
                 # Resaltar la estación
-                try:
-                    c.itemconfig(f'estacion_{nombre}', outline='#0000ff', width=3)
-                except Exception:
-                    pass
+                cnv.itemconfig(f'estacion_{nombre}', outline='#0000ff', width=3)
                 x, y = self._posiciones[nombre]
                 # Centro del rectángulo
                 x_c = x + self._rect_w / 2
                 y_c = y + self._rect_h / 2
                 puntos.append((x_c, y_c))
-        # Dibujar líneas entre puntos consecutivos
+        #dibujar líneas entre puntos consecutivos
         for a, b in zip(puntos, puntos[1:]):
-                line = c.create_line(a[0], a[1], b[0], b[1], fill='#0000ff', width=3, tags=(f'ruta_{getattr(tren, "id_tren", "")}'))
+                line = cnv.create_line(a[0], a[1], b[0], b[1], fill='#0000ff', width=3, tags=(f'ruta_{getattr(tren, "id_tren", "")}'))
                 # Guardar para poder borrar luego
                 self._route_items.append(line)
 
@@ -933,11 +882,8 @@ class Pestañas:
         self.label_reloj.pack()
 
         # Botón para ver la cola de eventos (está dentro de la pestaña Simulación)
-        try:
-            boton_eventos_local = ttk.Button(frame_reloj, text="Ver eventos", command=self.mostrar_eventos_dialog)
-            boton_eventos_local.pack(padx=4, pady=2)
-        except Exception:
-            pass
+        boton_eventos_local = ttk.Button(frame_reloj, text="Ver eventos", command=self.mostrar_eventos_dialog)
+        boton_eventos_local.pack(padx=4, pady=2)
         # Opción: detener simulación cuando no queden eventos
         try:
             self._stop_when_empty_var = tk.BooleanVar(value=True)
@@ -945,8 +891,6 @@ class Pestañas:
             chk.pack(padx=4, pady=2)
         except Exception:
             self._stop_when_empty_var = tk.BooleanVar(value=True)
-
-        # (Botón 'Procesar eventos ahora' eliminado a petición del usuario)
         # Mostrar la hora inicial
         self.actualizar_ui_reloj()
     #funcion para actualizar la ui del reloj junto a los ticks
@@ -967,7 +911,7 @@ class Pestañas:
         except Exception:
             self._seconds_since_last_generation = 1
         self.actualizar_ui_reloj()
-        # Procesar eventos programados hasta la hora actual (movimientos de trenes)
+        #procesar eventos programados hasta la hora actual (movimientos de trenes)
         try:
             if getattr(self, 'gestor_eventos', None) is not None:
                 procesados = self.gestor_eventos.procesar_hasta(self.reloj.fecha_hora, self.estaciones_base, self.vias_base, self.trenes_list)
@@ -979,7 +923,7 @@ class Pestañas:
                         self.actualizar_lista_trenes()
                     except Exception:
                         pass
-                    # Si no quedan eventos y la opción está activa, detener el reloj
+                    #si no quedan eventos y la opción está activa, detener el reloj
                     try:
                         eventos_restantes = len(self.gestor_eventos.listar_eventos())
                         if eventos_restantes == 0 and getattr(self, '_stop_when_empty_var', None) is not None and self._stop_when_empty_var.get():
@@ -1000,26 +944,24 @@ class Pestañas:
                         # generar demanda por 1 minuto
                         try:
                             self.estado_sim.generar_demanda(1)
-                            print(f'[DEBUG] Pasajeros generados a las {self.reloj.obtener_hora()}')
-                        except Exception as e:
-                            print(f'[DEBUG] Error generando pasajeros: {e}')
+                            print(f'Pasajeros generados a las {self.reloj.obtener_hora()}')
+                        except Exception as error:
+                            print(f'Error generando pasajeros: {error}')
                         # redibujar estaciones y actualizar listas para reflejar nuevos pasajeros
                         try:
                             self.dibujar_estaciones()
                             self.actualizar_lista_estaciones()
                         except Exception:
                             pass
-                    except Exception as e:
-                        print(f'[DEBUG] Error en generación periódica: {e}')
+                    except Exception as error:
+                        print(f'Error en generación periódica: {error}')
                     finally:
                         self._seconds_since_last_generation = 0
-        except Exception as e:
-            print(f'[DEBUG] Error general en generación: {e}')
+        except Exception as error:
+            print(f'Error general en generación: {error}')
         # reprogramar si está corriendo
         if self._reloj_running:
             self._reloj_after_id = self.parent.after(1000, self.reloj_tick_por_segundo)
-
-    # Nota: método procesar_eventos_ahora eliminado según solicitud del usuario
 
     def empezar_reloj(self):
         # inicia el avance del reloj 
@@ -1032,8 +974,5 @@ class Pestañas:
         if self._reloj_running:
             self._reloj_running = False
             if self._reloj_after_id is not None:
-                try:
-                    self.parent.after_cancel(self._reloj_after_id)
-                except Exception:
-                    pass
+                self.parent.after_cancel(self._reloj_after_id)
                 self._reloj_after_id = None
