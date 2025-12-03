@@ -34,4 +34,4 @@ class Generador(ABC):
         constructor: Callable[[int, dt.datetime], any],
         update: bool = True,
     ) -> list[Any]:
-        pass  # o ...
+        pass  
