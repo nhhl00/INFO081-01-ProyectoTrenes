@@ -8,7 +8,6 @@ from ui import fn_botones
 from ui import Pestañas
 #clases:
 from models import *
-#logica(Estado):
 
 def main():
     #Iniciar programa
@@ -77,5 +76,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # Ejecutar sin diálogo modal para pruebas automatizadas
+    # Ejecutar
     main()

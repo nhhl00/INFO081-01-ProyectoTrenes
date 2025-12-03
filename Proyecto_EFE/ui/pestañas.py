@@ -4,10 +4,10 @@ from tkinter import messagebox
 from config import COLOR_TRENES, BORDE_TRENES
 from models import Estacion, Tren, Vias
 from logic import horaActual
-from logic.EstadoDeSimulacion import EstadoSimulacion
-from logic.SistemaDeGuardado import SistemaGuardado
+from logic import EstadoSimulacion
+from logic import SistemaGuardado
+from logic import Evento
 import datetime as dt
-from logic.eventos import GestorEventos, Evento
 
 trenes = [
     Tren("BMU", "T01", 236, 160, ["Santiago", "Rancagua","Santiago","Chillán"], "Santiago", 4),
@@ -147,11 +147,7 @@ class Pestañas:
         self.label_tren_ruta.pack(anchor=tk.W)
 
         try:
-            # Usar el gestor de eventos compartido (creado en EstadoSimulacion)
-            # Agendar dos eventos explícitos para pruebas:
-            # 1) mover primer tren a Rancagua a las 07:02
-            # 2) forzar retorno a Santiago a las 07:05
-            # self.gestor_eventos ya debe estar inicializado desde EstadoSimulacion
+            #para eventos de trenes
             try:
                 if getattr(self, 'trenes_list', None) and len(self.trenes_list) > 0:
                     tren0 = self.trenes_list[0]
@@ -554,7 +550,7 @@ class Pestañas:
             self.label_pasajeros.config(text=f"Pasajeros en espera: {pasajeros_esperando}")
         except Exception:
             pass
-        # (Opcional) mostrar destinos de hasta 3 pasajeros en espera en el label de población
+        #mostrar destinos de hasta 3 pasajeros en espera en el label de población
         try:
             destinos = []
             for p in pasajeros[:3]:
@@ -601,7 +597,6 @@ class Pestañas:
             else:
                 c.itemconfig(item, fill='#cccccc', width=2)
         # Ahora resaltar la seleccionada en verde oscuro
-        
         if via_id is None:
             return
         for item in c.find_withtag(f'via_{via_id}'):
@@ -707,7 +702,7 @@ class Pestañas:
         self.mostrar_ruta_tren(tren)
 
     def mostrar_eventos_dialog(self):
-        """Muestra la cola de eventos en un diálogo modal para depuración."""
+        #muestra el dialog(caja) de eventos
         try:
             eventos = []
             # preferir el gestor de eventos de la propia pestaña
@@ -720,9 +715,9 @@ class Pestañas:
             if not eventos:
                 messagebox.showinfo("Eventos", "No hay eventos programados.")
                 return
-            # Normalizar distintos formatos posibles de 'eventos'
-            # Vamos a mostrar los eventos en un Listbox con botones para eliminar
-            # Normalizar la colección de eventos a una lista de objetos/dicts
+            #Transportar distintos formatos posibles de "eventos"
+            #Vamos a mostrar los eventos en un Listbox con botones para eliminar
+            #Transportar la colección de eventos a una lista de objetos/dicts
             if isinstance(eventos, dict):
                 eventos = [eventos]
             if not isinstance(eventos, (list, tuple)) and hasattr(eventos, 'listar_eventos'):
@@ -750,7 +745,7 @@ class Pestañas:
             lb.config(yscrollcommand=scrollbar.set)
 
             
-            idx_to_id = []
+            indice_to_id = []
             for e in eventos:
                 try:
                     if hasattr(e, 'tiempo') or hasattr(e, 'tipo'):
@@ -773,19 +768,19 @@ class Pestañas:
                     display = str(e)
                     id_ev = getattr(e, 'id', '') if hasattr(e, 'id') else ''
                 lb.insert(tk.END, display)
-                idx_to_id.append(id_ev)
+                indice_to_id.append(id_ev)
 
             # Botones de acción
             frame_buttons = ttk.Frame(top)
             frame_buttons.pack(fill=tk.X)
-
+            #eliminar evento seleccionado
             def eliminar_seleccionado():
                 sel = lb.curselection()
                 if not sel:
                     messagebox.showinfo('Eliminar', 'Seleccione un evento primero.')
                     return
                 i = sel[0]
-                event_id = idx_to_id[i]
+                event_id = indice_to_id[i]
                 if not event_id:
                     messagebox.showerror('Eliminar', 'Evento sin id, no se puede eliminar.')
                     return
@@ -797,7 +792,7 @@ class Pestañas:
                     ok = gestor.eliminar_evento_por_id(event_id)
                     if ok:
                         lb.delete(i)
-                        idx_to_id.pop(i)
+                        indice_to_id.pop(i)
                         messagebox.showinfo('Eliminar', 'Evento eliminado.')
                     else:
                         messagebox.showerror('Eliminar', 'Evento no encontrado.')
@@ -874,6 +869,7 @@ class Pestañas:
                 # Guardar para poder borrar luego
                 self._route_items.append(line)
 
+    #guardar simulacion y messagebox en la interfaz al guardar
     def guardar_simulacion_actual(self):
         try:
             if self.estado_sim is None:
@@ -886,10 +882,11 @@ class Pestañas:
                 messagebox.showinfo("Guardar", f"Simulación guardada exitosamente.\n\nUbicación: {ruta}")
             else:
                 messagebox.showerror("Guardar", "Error al guardar la simulación. Consulte la consola para detalles.")
-        except Exception as e:
-            messagebox.showerror("Guardar", f"Error al guardar la simulación: {e}")
-            print(f"Error en guardar_simulacion_actual: {e}")
+        except Exception as error:
+            messagebox.showerror("Guardar", f"Error al guardar la simulación: {error}")
+            print(f"Error en guardar_simulacion_actual: {error}")
 
+    #guarda la simulacion y messagebox al cargar
     def cargar_simulacion_guardada(self):
         try:
             guardados = self.sistema_guardado.listar_guardados()
@@ -897,7 +894,7 @@ class Pestañas:
             if not guardados:
                 messagebox.showinfo("Cargar", "No hay simulaciones guardadas disponibles.")
                 return
-            
+            #toplevel para mostrar los textos
             top = tk.Toplevel(self.parent)
             top.title("Cargar simulación")
             top.geometry('500x400')
@@ -909,22 +906,23 @@ class Pestañas:
             
             listbox = tk.Listbox(frame_list, selectmode=tk.SINGLE)
             listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            
+            #hacer scroll en la lista
             scrollbar = ttk.Scrollbar(frame_list, orient=tk.VERTICAL, command=listbox.yview)
             scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
             listbox.config(yscrollcommand=scrollbar.set)
             
             mapeo_guardados = []
-            
+            #mapear los archivos guardados
             for fecha in sorted(guardados.keys(), reverse=True):
                 for guardado in sorted(guardados[fecha], key=lambda x: x['nombre'], reverse=True):
                     nombre_mostrado = f"{fecha} - {guardado['nombre'].replace('guardado_', '').replace('.json', '')}"
                     listbox.insert(tk.END, nombre_mostrado)
                     mapeo_guardados.append(guardado['ruta'])
-            
+            #frame de botones para cargar
             frame_botones = ttk.Frame(top)
             frame_botones.pack(fill=tk.X, padx=10, pady=10)
             
+            #cargar simulacion guardada
             def cargar_seleccionado():
                 seleccion = listbox.curselection()
                 if not seleccion:
@@ -966,6 +964,7 @@ class Pestañas:
 
     #funcion para crear el ui del reloj 
     def crear_ui_reloj(self):
+        #frame y labels
         frame_reloj = ttk.Frame(self.frame_simulacion)
         frame_reloj.pack(pady=10)
 

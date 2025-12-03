@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from logic.SistemaDeGuardado import SistemaGuardado
 from logic.EstadoDeSimulacion import EstadoSimulacion
 import datetime as dt
-from logic.eventos import Evento
+from logic import Evento
 
 estado = EstadoSimulacion()
 estado.estaciones = {"Santiago": {"nombre":"Santiago"}}

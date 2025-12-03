@@ -1,0 +1,151 @@
+{
+  "hora_actual": "2015-03-01T07:00:01",
+  "estaciones": {
+    "Santiago": {
+      "nombre": "Santiago",
+      "id_estacion": "STG",
+      "poblacion": 8242459,
+      "capacidad_de_trenes": 1,
+      "estado": "activa",
+      "trenes_esperando": [],
+      "pasajeros_esperando": 0
+    },
+    "Rancagua": {
+      "nombre": "Rancagua",
+      "id_estacion": "RAN",
+      "poblacion": 274407,
+      "capacidad_de_trenes": 1,
+      "estado": "activa",
+      "trenes_esperando": [],
+      "pasajeros_esperando": 0
+    },
+    "Talca": {
+      "nombre": "Talca",
+      "id_estacion": "TAL",
+      "poblacion": 242344,
+      "capacidad_de_trenes": 1,
+      "estado": "activa",
+      "trenes_esperando": [],
+      "pasajeros_esperando": 0
+    },
+    "Chillán": {
+      "nombre": "Chillán",
+      "id_estacion": "CHL",
+      "poblacion": 204091,
+      "capacidad_de_trenes": 1,
+      "estado": "activa",
+      "trenes_esperando": [],
+      "pasajeros_esperando": 0
+    }
+  },
+  "vias": [
+    {
+      "id_via": "V01",
+      "longitud": 87,
+      "conexion_estacion_a": "Santiago",
+      "conexion_estacion_b": "Rancagua",
+      "estado": "desocupada",
+      "tren_en_via": null,
+      "via_rotatoria": false
+    },
+    {
+      "id_via": "V02",
+      "longitud": 400,
+      "conexion_estacion_a": "Santiago",
+      "conexion_estacion_b": "Chillán",
+      "estado": "desocupada",
+      "tren_en_via": null,
+      "via_rotatoria": false
+    },
+    {
+      "id_via": "V03",
+      "longitud": 120,
+      "conexion_estacion_a": "Chillán",
+      "conexion_estacion_b": "chillan_talca_mitad",
+      "estado": "desocupada",
+      "tren_en_via": null,
+      "via_rotatoria": false
+    },
+    {
+      "id_via": "V04",
+      "longitud": 60,
+      "conexion_estacion_a": "chillan_talca_mitad",
+      "conexion_estacion_b": "Talca",
+      "estado": "desocupada",
+      "tren_en_via": null,
+      "via_rotatoria": false
+    },
+    {
+      "id_via": "V05",
+      "longitud": 80,
+      "conexion_estacion_a": "Rancagua",
+      "conexion_estacion_b": "rancagua_talca_mitad",
+      "estado": "desocupada",
+      "tren_en_via": null,
+      "via_rotatoria": false
+    },
+    {
+      "id_via": "V06",
+      "longitud": 120,
+      "conexion_estacion_a": "rancagua_talca_mitad",
+      "conexion_estacion_b": "Talca",
+      "estado": "desocupada",
+      "tren_en_via": null,
+      "via_rotatoria": false
+    }
+  ],
+  "trenes": [
+    {
+      "nombre_tren": "BMU",
+      "id_tren": "T01",
+      "capacidad": 236,
+      "velocidad_constante": 160,
+      "ruta": [
+        "Santiago",
+        "Rancagua",
+        "Santiago",
+        "Chillán"
+      ],
+      "estacion_actual": "Santiago",
+      "estacion_destino": "Rancagua",
+      "vagones": 4,
+      "estado": "detenido",
+      "pasajeros": 0
+    },
+    {
+      "nombre_tren": "EMU",
+      "id_tren": "T02",
+      "capacidad": 250,
+      "velocidad_constante": 120,
+      "ruta": [
+        "Talca",
+        "Chillán",
+        "Talca",
+        "Rancagua"
+      ],
+      "estacion_actual": "Talca",
+      "estacion_destino": "Chillán",
+      "vagones": 8,
+      "estado": "detenido",
+      "pasajeros": 0
+    }
+  ],
+  "eventos": [
+    {
+      "tiempo": "",
+      "tipo": "",
+      "datos": {}
+    },
+    {
+      "tiempo": "",
+      "tipo": "",
+      "datos": {}
+    },
+    {
+      "tiempo": "",
+      "tipo": "",
+      "datos": {}
+    }
+  ],
+  "pasajeros_activos": 0
+}

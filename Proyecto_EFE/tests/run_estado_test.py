@@ -2,8 +2,8 @@ import sys
 # Asegurar que el paquete local esté en sys.path
 sys.path.insert(0, '.')
 
-from logic.EstadoDeSimulacion import EstadoSimulacion
-from models.clases import Estacion, Vias
+from logic import EstadoSimulacion
+from models import Estacion, Vias
 
 es = EstadoSimulacion()
 # Crear estaciones de prueba

@@ -1,18 +1,15 @@
-#!/usr/bin/env python3
-"""
-Test de generación de pasajeros en la UI simulando el tick del reloj.
-"""
+#Test de generación de pasajeros en la UI simulando el tick del reloj.
 import sys
 import os
 
 # Agregar la carpeta padre al path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from logic.EstadoDeSimulacion import EstadoSimulacion, horaActual
+from logic import EstadoSimulacion, horaActual
 from models import Estacion, Tren, Vias
 
 def test_passenger_generation_ui_tick():
-    """Simula los ticks del reloj y la generación de pasajeros cada 60 segundos."""
+    #simula ticks y generacion de pasajeros cada 1 min (60 segundos)
     
     # Crear estado de simulación
     estado_sim = EstadoSimulacion()

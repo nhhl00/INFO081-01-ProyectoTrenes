@@ -1,37 +1,36 @@
 import json
 import os
 import datetime
+import tkinter as tk
 
 class SistemaGuardado:
     def __init__(self, directorio="saves"):
         self.directorio = directorio
         if not os.path.exists(directorio):
             os.makedirs(directorio)
-
+    #crear la ruta para guardar
     def _crear_ruta_guardado(self, fecha_hora):
         fecha = fecha_hora.date()
         hora = fecha_hora.time()
-        
         año = fecha.year
         carpeta_año = os.path.join(self.directorio, str(año))
-        
+        #mes del archivo
         mes = f"{fecha.month:02d}"
         carpeta_mes = os.path.join(carpeta_año, mes)
-        
+        #dia del archivo
         dia = f"{fecha.day:02d}"
         carpeta_dia = os.path.join(carpeta_mes, dia)
         
         if not os.path.exists(carpeta_dia):
             os.makedirs(carpeta_dia)
-        
+        #darle nombre al archivo en base al tiempo
         nombre_archivo = f"guardado_{hora.hour:02d}-{hora.minute:02d}-{hora.second:02d}.json"
         ruta_completa = os.path.join(carpeta_dia, nombre_archivo)
         
         return ruta_completa
-
+    
     def guardar_simulacion(self, estado, nombre_archivo=None):
-        """Guarda la simulación en una estructura de carpetas por fecha/hora.
-        Si nombre_archivo no se proporciona, usa la hora actual del estado."""
+        #Guarda la simulacion en una estructura de archivos por fecha y hora, usando como nombre la fecha y hora respectiva
         try:
             # Obtener la hora actual de la simulación
             fecha_hora = getattr(estado, 'hora_actual').fecha_hora if hasattr(estado, 'hora_actual') else datetime.datetime.now()
@@ -39,27 +38,24 @@ class SistemaGuardado:
             # Crear ruta con estructura de carpetas
             ruta = self._crear_ruta_guardado(fecha_hora)
             
-            # Serializar datos de la simulación
+            # datos de la simulación
             datos = {
                 "hora_actual": fecha_hora.isoformat() if fecha_hora else None,
-                "estaciones": self._serializar_estaciones(getattr(estado, "estaciones", {})),
-                "vias": self._serializar_vias(getattr(estado, 'vias', [])),
-                "trenes": self._serializar_trenes(getattr(estado, "trenes", [])),
-                "eventos": self._serializar_eventos(getattr(estado, "eventos", [])),
-                "pasajeros_activos": self._serializar_pasajeros(getattr(estado, "pasajeros_activos", []))
+                "estaciones": self.serializar_estaciones(getattr(estado, "estaciones", {})),
+                "vias": self.serializar_vias(getattr(estado, 'vias', [])),
+                "trenes": self.serializar_trenes(getattr(estado, "trenes", [])),
+                "eventos": self.serializar_eventos(getattr(estado, "eventos", [])),
+                "pasajeros_activos": self.serializar_pasajeros(getattr(estado, "pasajeros_activos", []))
             }
-
             # Guardar a archivo JSON
             with open(ruta, "w", encoding="utf-8") as f:
                 json.dump(datos, f, indent=2, ensure_ascii=False)
-            
-            print(f"Simulación guardada en: {ruta}")
             return True, ruta
-        except Exception as e:
-            print(f"Error guardando: {e}")
+        except Exception as error:
+            print(f"Error guardando: {error}")
             return False, None
-
-    def _serializar_estaciones(self, estaciones):
+    #guardar datos de estaciones en el archivo de guardado
+    def serializar_estaciones(self, estaciones):
         if isinstance(estaciones, dict):
             resultado = {}
             for nombre, estacion in estaciones.items():
@@ -74,8 +70,8 @@ class SistemaGuardado:
                 }
             return resultado
         return estaciones
-
-    def _serializar_vias(self, vias):
+    #guardar datos de vias en el archivo de guardado
+    def serializar_vias(self, vias):
         resultado = []
         for via in vias:
             resultado.append({
@@ -88,8 +84,8 @@ class SistemaGuardado:
                 "via_rotatoria": getattr(via, 'via_rotatoria', False)
             })
         return resultado
-
-    def _serializar_trenes(self, trenes):
+    #guardar datos de trenes en el archivo de guardado
+    def serializar_trenes(self, trenes):
         resultado = []
         for tren in trenes:
             resultado.append({
@@ -105,8 +101,8 @@ class SistemaGuardado:
                 "pasajeros": len(getattr(tren, 'pasajeros', []))
             })
         return resultado
-
-    def _serializar_eventos(self, eventos):
+    #guardar datos de eventos en el archivo de guardado
+    def serializar_eventos(self, eventos):
         resultado = []
         if hasattr(eventos, 'listar_eventos'):
             eventos = eventos.listar_eventos()
@@ -117,11 +113,10 @@ class SistemaGuardado:
                 "datos": getattr(evento, 'datos', {})
             })
         return resultado
-
-    def _serializar_pasajeros(self, pasajeros):
-        """Convierte los pasajeros a formato serializable."""
+    #guardar datos de pasajeros en el archivo de guardado
+    def serializar_pasajeros(self, pasajeros):
         return len(pasajeros)
-
+    #guardar datos de simulacion en el archivo de guardado
     def cargar_simulacion(self, ruta_archivo):
         try:
             with open(ruta_archivo, "r", encoding="utf-8") as f:
@@ -130,16 +125,10 @@ class SistemaGuardado:
             from .EstadoDeSimulacion import EstadoSimulacion
             estado = EstadoSimulacion()
             
-            # Restaurar hora
-            try:
-                if datos.get("hora_actual"):
+            #Restaurar hora
+            if datos.get("hora_actual"):
                     estado.hora_actual.fecha_hora = datetime.datetime.fromisoformat(datos.get("hora_actual"))
-            except Exception:
-                pass
             
-            # Nota: Los datos están serializados como dicts y strings, 
-            # por lo que la carga completa requeriría reconstruir objetos.
-            # Por ahora se guardan los datos para propósitos de auditoría.
             estado.estaciones = datos.get("estaciones", {})
             estado.vias = datos.get("vias", [])
             estado.trenes = datos.get("trenes", [])
@@ -149,14 +138,14 @@ class SistemaGuardado:
         except Exception as e:
             print(f"Error cargando: {e}")
             return None
-
+    ##lista de archivos guardados
     def listar_guardados(self):
         guardados = {}
         
         if not os.path.exists(self.directorio):
             return guardados
         
-        # Recorrer la estructura de carpetas año/mes/día
+        #Recorrer la estructura de carpetas año/mes/día
         for año in os.listdir(self.directorio):
             año_path = os.path.join(self.directorio, año)
             if not os.path.isdir(año_path):
@@ -184,6 +173,4 @@ class SistemaGuardado:
                                 'nombre': archivo,
                                 'ruta': ruta_completa
                             })
-        
         return guardados
-    
